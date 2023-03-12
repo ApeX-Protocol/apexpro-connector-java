@@ -10,9 +10,9 @@ This library is a wrapper around the [ApexPro API](https://api-docs.pro.apex.exc
 Replace `LATEST_VERSION` with the latest version number and paste the snippet below in `pom.xml`
 ```
 <dependency>
-    <groupId>exchange.apexpro</groupId>
-    <artifactId>apexpro-connector-java</artifactId>
-    <version>LATEST_VERSION</version>
+  <groupId>io.github.apex-protocol</groupId>
+  <artifactId>apexpro-connector-java</artifactId>
+  <version>LATEST_VERSION</version>
 </dependency>
 ```
 Run `mvn install` where `pom.xml` is located to install the dependency.
