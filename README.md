@@ -37,14 +37,9 @@ log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMa
 
 ```
 String ETH_PRIVATE_KEY = "Your ethereum private key";
+ApexProCredentials apexProCredentials = ApexProCredentials.create(ETH_PRIVATE_KEY,ApiConstants.NETWORKID_TEST);
 
-Credentials web3Credentials = Credentials.create(ETH_PRIVATE_KEY);
-L2KeyPair l2KeyPair = Onboard.deriveL2Key(web3Credentials, ApiConstants.NETWORKID_TEST);
-ApiCredential apiCredential = Onboard.generateApiCredential(web3Credentials, l2KeyPair.getPublicKey(), l2KeyPair.getPublicKeyYCoordinate(),ApiConstants.NETWORKID_TEST);
-
-log.info("L2KeyPair:{} ",l2KeyPair);
-log.info("apiCredential:{} ",apiCredential);
-
+log.info("apexProCredentials:{} ",apexProCredentials);
 ```
 
 

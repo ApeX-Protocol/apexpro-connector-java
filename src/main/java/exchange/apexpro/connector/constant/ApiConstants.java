@@ -32,7 +32,6 @@ public class ApiConstants {
 
     // ------------ Ethereum Transactions ------------
     public static final Uint256 MAX_SOLIDITY_UINT = new Uint256(new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
-    public static final int COLLATERAL_TOKEN_DECIMALS = 6;
     // ------------ Off-Chain Ethereum-Signed Actions ------------
     public static final String OFF_CHAIN_ONBOARDING_ACTION = BROKER_NAME+" Onboarding"; // action:ApeX Onboarding  onlySignOn:https://pro.apex.exchange nonce:1188491033265307648
     public static final String OFF_CHAIN_KEY_DERIVATION_ACTION = "L2 Key"; //{"name": "ApeX","version": "1.0","envId": 1,"action": "L2 Key","onlySignOn": "https://pro.apex.exchange"}
