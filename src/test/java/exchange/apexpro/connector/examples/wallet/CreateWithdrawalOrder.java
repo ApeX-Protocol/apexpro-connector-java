@@ -29,7 +29,7 @@ public class CreateWithdrawalOrder {
         long expireTime = expireTimeInHour * 3600L * 1000L;
 
         String currency = COLLATERAL_ASSET;
-        String address = privateConfig.credentials.getAddress();
+        String address = privateConfig.web3Credentials.getAddress();
         Long chainId = 97l;
         WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();
