@@ -2,11 +2,9 @@ package exchange.apexpro.connector.impl;
 
 import exchange.apexpro.connector.SyncRequestClient;
 import exchange.apexpro.connector.model.account.*;
-import exchange.apexpro.connector.model.enums.OrderSide;
-import exchange.apexpro.connector.model.enums.OrderStatus;
-import exchange.apexpro.connector.model.enums.OrderType;
-import exchange.apexpro.connector.model.enums.PositionSide;
+import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
+import exchange.apexpro.connector.model.market.Ticker;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
 import exchange.apexpro.connector.model.trade.*;
 import exchange.apexpro.connector.model.wallet.*;
@@ -71,9 +69,20 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal limitFee, long expiration, OrderType timeInForce, BigDecimal triggerPrice, BigDecimal trailingPercent, String clientOrderId, String signature, boolean reduceOnly) {
-        return RestApiInvoker.callSync(requestImpl.createOrder(symbol, side, type, size, price, limitFee, expiration, timeInForce, triggerPrice, trailingPercent, clientOrderId, signature, reduceOnly));
+    public Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,null,null));
     }
+
+    @Override
+    public Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,withTakeProfit,withStopLoss));
+    }
+
+    @Override
+    public Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice, BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createConditionalOrder(symbol, side, type, size, triggerPrice, triggerPriceType,orderPrice, maxFeeRate, timeInForce, clientOrderId, reduceOnly));
+    }
+
 
     @Override
     public Map<String, String> cancelOrder(String id) {
@@ -147,6 +156,10 @@ public class SyncRequestImpl implements SyncRequestClient {
 
     public FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
         return RestApiInvoker.callSync(requestImpl.getFundingRate( symbol,  limit,  page,  beginTimeInclusive,  endTimeExclusive,  positionSide));
+    }
+
+    public Ticker getTicker(String symbol) {
+        return RestApiInvoker.callSync(requestImpl.getTicker( symbol));
     }
 
 }

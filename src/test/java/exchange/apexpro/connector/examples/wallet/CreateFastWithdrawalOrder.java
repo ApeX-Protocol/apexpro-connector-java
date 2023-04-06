@@ -1,5 +1,6 @@
 package exchange.apexpro.connector.examples.wallet;
 
+import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.impl.L2OrderSigner;
@@ -17,10 +18,11 @@ public class CreateFastWithdrawalOrder {
 
     public static void main(String[] args) {
 
-        PrivateConfig privateConfig = PrivateConfig.loadConfig();
-        L2KeyPair l2KeyPair = privateConfig.l2KeyPair;
-        ApiCredential apiCredential = privateConfig.apiCredential;
-        SyncRequestClient syncRequestClient = SyncRequestClient.create(PrivateConfig.loadConfig().apiCredential);
+        ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
+
+        L2KeyPair l2KeyPair = apexProCredentials.l2KeyPair;
+        ApiCredential apiCredential = apexProCredentials.apiCredential;
+        SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
         BigDecimal amount = new BigDecimal("10");
         String clientId = String.valueOf(System.currentTimeMillis());
@@ -28,7 +30,7 @@ public class CreateFastWithdrawalOrder {
         long expireTime = expireTimeInHour * 3600L * 1000L;
 
         String currency = COLLATERAL_ASSET;
-        String address = privateConfig.web3Credentials.getAddress();
+        String address = apexProCredentials.web3Credentials.getAddress();
         Long chainId = 97l;
         WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();

@@ -1,9 +1,6 @@
 package exchange.apexpro.connector.impl;
 
-import exchange.apexpro.connector.RequestOptions;
-import exchange.apexpro.connector.SubscriptionClient;
-import exchange.apexpro.connector.SubscriptionOptions;
-import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.*;
 import exchange.apexpro.connector.model.user.ApiCredential;
 
 public final class ApiInternalFactory {
@@ -17,9 +14,9 @@ public final class ApiInternalFactory {
     private ApiInternalFactory() {
     }
 
-    public SyncRequestClient createSyncRequestClient(ApiCredential credential, RequestOptions options) {
+    public SyncRequestClient createSyncRequestClient(ApexProCredentials  apexProCredentials, RequestOptions options) {
         RequestOptions requestOptions = new RequestOptions(options);
-        RestApiRequestImpl requestImpl = new RestApiRequestImpl(credential, requestOptions);
+        RestApiRequestImpl requestImpl = new RestApiRequestImpl(apexProCredentials, requestOptions);
         return new SyncRequestImpl(requestImpl);
     }
 

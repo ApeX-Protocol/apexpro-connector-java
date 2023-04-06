@@ -3,11 +3,9 @@ package exchange.apexpro.connector;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.ApiInternalFactory;
 import exchange.apexpro.connector.model.account.*;
-import exchange.apexpro.connector.model.enums.OrderSide;
-import exchange.apexpro.connector.model.enums.OrderStatus;
-import exchange.apexpro.connector.model.enums.OrderType;
-import exchange.apexpro.connector.model.enums.PositionSide;
+import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
+import exchange.apexpro.connector.model.market.Ticker;
 import exchange.apexpro.connector.model.trade.*;
 import exchange.apexpro.connector.model.wallet.*;
 import exchange.apexpro.connector.model.user.ApiCredential;
@@ -53,8 +51,8 @@ public interface SyncRequestClient {
      *
      * @return The instance of synchronous connector.
      */
-    static SyncRequestClient create(ApiCredential apiCredential, RequestOptions options) {
-        return ApiInternalFactory.getInstance().createSyncRequestClient(apiCredential, options);
+    static SyncRequestClient create(ApexProCredentials apexProCredentials, RequestOptions options) {
+        return ApiInternalFactory.getInstance().createSyncRequestClient(apexProCredentials, options);
     }
 
     /**
@@ -63,10 +61,10 @@ public interface SyncRequestClient {
      *
      * @return The instance of synchronous connector.
      */
-    static SyncRequestClient create(ApiCredential apiCredential) {
+    static SyncRequestClient create(ApexProCredentials apexProCredentials) {
         RequestOptions requestOptions = new RequestOptions();
-        requestOptions.setNetworkId(apiCredential.getNetworkId());
-        return ApiInternalFactory.getInstance().createSyncRequestClient(apiCredential, requestOptions);
+        requestOptions.setNetworkId(apexProCredentials.apiCredential.getNetworkId());
+        return ApiInternalFactory.getInstance().createSyncRequestClient(apexProCredentials, requestOptions);
     }
 
 
@@ -145,20 +143,60 @@ public interface SyncRequestClient {
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
-     * @param type            "LIMIT", "MARKET","STOP_LIMIT", "STOP_MARKET", "TAKE_PROFIT_LIMIT", "TAKE_PROFIT_MARKET"
+     * @param type            Only "LIMIT", "MARKET" can be accepted.
      * @param size            Size
      * @param price           Price
-     * @param limitFee        limitFee = price * size * takerFeeRate( from GET /v1/account)
-     * @param expiration      Order expiry time
+     * @param maxFeeRate      Maximum trading fee rate, you can get it by max(taker_fee,maker_fee), taker_fee/maker_fee can be fetched from GET /v1/account
      * @param timeInForce     "GOOD_TIL_CANCEL", "FILL_OR_KILL", "IMMEDIATE_OR_CANCEL", "POST_ONLY"
-     * @param triggerPrice    Trigger price
-     * @param trailingPercent Conditional order trailing-stop
-     * @param clientOrderId   Randomized connector id
-     * @param signature       l2Key signature
+     * @param clientOrderId   Client order id
      * @param reduceOnly      Reduce-only
      * @return order
      */
-    Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal limitFee, long expiration, OrderType timeInForce, BigDecimal triggerPrice, BigDecimal trailingPercent, String clientOrderId, String signature, boolean reduceOnly);
+    Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+
+
+    /**
+     * POST Creating Orders with TPSL(Take-profit/Stop-loss)
+     * POST /v1/create-order
+     *
+     * @param symbol          Symbol
+     * @param side            BUY or SELL
+     * @param type            Only "LIMIT", "MARKET" can be accepted.
+     * @param size            Size
+     * @param price           Price
+     * @param maxFeeRate      Maximum trading fee rate, you can get it by max(taker_fee,maker_fee), taker_fee/maker_fee can be fetched from GET /v1/account
+     * @param timeInForce     "GOOD_TIL_CANCEL", "FILL_OR_KILL", "IMMEDIATE_OR_CANCEL", "POST_ONLY"
+     * @param clientOrderId   Client order id
+     * @param reduceOnly      Reduce-only
+     * @param withTakeProfit  if you want to place an order with some take profit parameters, you can pass it here.
+     * @param withStopLoss    if you want to place an order with some stop loss parameters, you can pass it here.
+     * @return order
+     */
+    Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss);
+
+
+    /**
+     * POST Creating Conditional Order
+     * POST /v1/create-order
+     *
+     * @param symbol          Symbol
+     * @param side            BUY or SELL
+     * @param type            "LIMIT", "MARKET"
+     * @param size            Size
+     * @param triggerPrice    Trigger price
+     * @param triggerPriceType ORACLE、INDEX、MARKET
+     * @param orderPrice      Order price, only valid on LIMIT order
+     * @param maxFeeRate      Maximum trading fee rate, you can get it by max(taker_fee,maker_fee), taker_fee/maker_fee can be fetched from GET /v1/account
+     * @param timeInForce     "GOOD_TIL_CANCEL", "FILL_OR_KILL", "IMMEDIATE_OR_CANCEL", "POST_ONLY"
+     * @param clientOrderId   Order id generated by client
+     * @param reduceOnly      Reduce-only
+     * @return order
+     */
+    Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+
+
+
+
 
     /**
      * POST Cancel Order
@@ -334,4 +372,11 @@ public interface SyncRequestClient {
      */
     FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide);
 
+
+    /**
+     * GET Ticker Data
+     * @param symbol
+     * @return
+     */
+    Ticker getTicker(String symbol);
 }

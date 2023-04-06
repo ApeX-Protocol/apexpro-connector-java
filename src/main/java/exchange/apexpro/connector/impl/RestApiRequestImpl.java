@@ -1,39 +1,51 @@
 package exchange.apexpro.connector.impl;
 
 
+import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
+import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.ApiSignHelper;
 import exchange.apexpro.connector.impl.utils.JsonWrapper;
 import exchange.apexpro.connector.impl.utils.JsonWrapperArray;
 import exchange.apexpro.connector.impl.utils.RequestParamsBuilder;
 import exchange.apexpro.connector.model.account.*;
-import exchange.apexpro.connector.model.enums.OrderSide;
-import exchange.apexpro.connector.model.enums.OrderStatus;
-import exchange.apexpro.connector.model.enums.OrderType;
-import exchange.apexpro.connector.model.enums.PositionSide;
+import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
+import exchange.apexpro.connector.model.market.Ticker;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
 import exchange.apexpro.connector.model.meta.MultiChain;
 import exchange.apexpro.connector.model.trade.*;
+import exchange.apexpro.connector.model.user.L2KeyPair;
 import exchange.apexpro.connector.model.wallet.*;
 import exchange.apexpro.connector.model.user.ApiCredential;
 import exchange.apexpro.connector.model.user.User;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
 import org.web3j.utils.Strings;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 import static exchange.apexpro.connector.constant.ApiConstants.URL_SUFFIX;
+import static exchange.apexpro.connector.exception.ApexProApiException.EXEC_ERROR;
 
+@Slf4j
 class RestApiRequestImpl {
 
     private ApiCredential apiCredential;
+    private L2KeyPair l2KeyPair;
     private String serverUrl;
 
-    RestApiRequestImpl(ApiCredential credential, RequestOptions options) {
-        this.apiCredential = credential;
-        this.serverUrl = options.getUrl();
+    RestApiRequestImpl(ApexProCredentials apexProCredentials, RequestOptions options) {
+        if (apexProCredentials != null) {
+            this.apiCredential = apexProCredentials.apiCredential;
+            this.l2KeyPair = apexProCredentials.l2KeyPair;
+        }
+        if (options.getUrl() != null && !options.getUrl().equals(""))
+            this.serverUrl = options.getUrl();
     }
 
 
@@ -376,7 +388,18 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Order> createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal limitFee, long expiration, OrderType timeInForce, BigDecimal triggerPrice, BigDecimal trailingPercent, String clientOrderId, String signature, boolean reduceOnly) {
+    public RestApiRequest<Order> createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams takeProfitOrder, OrderParams stopLossOrder) {
+
+        //Sign the order with L2KeyPair
+        String signature;
+        BigDecimal limitFee = maxFeeRate.multiply(size).multiply(price).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+        long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
+        try {
+            signature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, size, price, limitFee, expireTime, clientOrderId,side);
+        }catch (IOException e) {
+            throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing an order with l2KeyPair");
+        }
+
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("symbol", symbol)
@@ -385,16 +408,65 @@ class RestApiRequestImpl {
                 .putToPost("size", size.toPlainString())
                 .putToPost("price", price.toPlainString())
                 .putToPost("limitFee", limitFee.toPlainString())
-                .putToPost("expiration", String.valueOf(expiration))
+                .putToPost("expiration", String.valueOf(expireTime))
                 .putToPost("timeInForce", timeInForce.name())
                 .putToPost("clientId", clientOrderId)
                 .putToPost("signature", signature)
-                .putToPost("reduceOnly", String.valueOf(reduceOnly));
-        if (triggerPrice != null && triggerPrice.compareTo(new BigDecimal(0)) != 0)
-            builder.putToPost("triggerPrice", triggerPrice.toPlainString());
-        if (trailingPercent != null && trailingPercent.compareTo(new BigDecimal(0)) != 0)
-            builder.putToPost("trailingPercent", trailingPercent.toPlainString());
+                .putToPost("reduceOnly", String.valueOf(reduceOnly))
+                ;
 
+        // with taker profit
+        if (takeProfitOrder != null) {
+            //Sign the order with L2KeyPair
+            if (Strings.isEmpty(takeProfitOrder.getClientOrderId()))
+                takeProfitOrder.setClientOrderId("tp"+clientOrderId);
+
+            BigDecimal tpLimitFee = maxFeeRate.multiply(takeProfitOrder.getSize()).multiply(takeProfitOrder.getPrice()).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+            String tpSignature;
+            try {
+                tpSignature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, takeProfitOrder.getSize(), takeProfitOrder.getPrice(), tpLimitFee, expireTime, takeProfitOrder.getClientOrderId(),takeProfitOrder.getSide());
+            }catch (IOException e) {
+                throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing tp-order with l2KeyPair");
+            }
+            builder.putToPost("isSetOpenTp",true).putToPost("isOpenTpslOrder",true)
+                    .putToPost("tpClientOrderId",takeProfitOrder.getClientOrderId())
+                    .putToPost("tpExpiration",String.valueOf(expireTime))
+                    .putToPost("tpLimitFee",tpLimitFee.toPlainString())
+                    .putToPost("tpPrice",takeProfitOrder.getPrice().toPlainString())
+                    .putToPost("tpSize",takeProfitOrder.getSize().toPlainString())
+                    .putToPost("tpSide",takeProfitOrder.getSide().name())
+                    .putToPost("tpTriggerPrice",takeProfitOrder.getTriggerPrice().toPlainString())
+                    .putToPost("tpTriggerPriceType",takeProfitOrder.getTriggerPriceType().name())
+                    .putToPost("tpSignature",tpSignature);
+        }
+
+        // with stop loss
+        if (stopLossOrder != null) {
+
+            //Sign the order with L2KeyPair
+            String slSignature;
+            if (Strings.isEmpty(stopLossOrder.getClientOrderId())) {
+                stopLossOrder.setClientOrderId("sl"+clientOrderId);
+            }
+            BigDecimal slLimitFee = maxFeeRate.multiply(stopLossOrder.getSize()).multiply(stopLossOrder.getPrice()).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+
+            try {
+                slSignature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, stopLossOrder.getSize(), stopLossOrder.getPrice(), slLimitFee, expireTime, stopLossOrder.getClientOrderId(),stopLossOrder.getSide());
+            }catch (IOException e) {
+                throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing sl-order with l2KeyPair");
+            }
+            builder.putToPost("isSetOpenSl",true).putToPost("isOpenTpslOrder",true)
+                    .putToPost( "slClientOrderId",stopLossOrder.getClientOrderId())
+                    .putToPost("slExpiration",expireTime)
+                    .putToPost("slLimitFee",slLimitFee)
+                    .putToPost("slPrice",stopLossOrder.getPrice())
+                    .putToPost("slSize",stopLossOrder.getSize())
+                    .putToPost("slSide",stopLossOrder.getSide())
+                    .putToPost("slTriggerPrice",stopLossOrder.getTriggerPrice())
+                    .putToPost("slTriggerPriceType",stopLossOrder.getTriggerPriceType())
+                    .putToPost("slSignature",slSignature);
+        }
+        log.info("request.post:{}",builder.getPostData());
         request.request = createRequest(serverUrl, "/v1/create-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -427,10 +499,114 @@ class RestApiRequestImpl {
 
             order.setCreatedTime(jsonWrapper.getLong("createdAt"));
             order.setUpdatedTime(jsonWrapper.getLong("updatedTime"));
+
+            if (takeProfitOrder != null)
+                order.setTakeProfitOrder(takeProfitOrder);
+            if (stopLossOrder != null)
+                order.setStopLossOrder(stopLossOrder);
+
             return order;
         });
         return request;
     }
+
+
+    public RestApiRequest<Order> createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
+
+        BigDecimal limitFee = maxFeeRate.multiply(size).multiply(orderPrice).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+
+        Ticker ticker = RestApiInvoker.callSync(this.getTicker( symbol ));
+        BigDecimal currentPrice = null;
+        if (triggerPriceType == PriceType.INDEX)
+            currentPrice = ticker.getIndexPrice();
+        else if (triggerPriceType == PriceType.ORACLE)
+            currentPrice =  ticker.getOraclePrice();
+        else
+            currentPrice = ticker.getLastPrice();
+
+
+        //Sign the order with L2KeyPair
+
+        String signature;
+        try {
+            if (type == OrderType.MARKET) {
+                BigDecimal maxMarketPriceRange = ExchangeInfo.perpetualContract(symbol).getMaxMarketPriceRange();
+                if (side == OrderSide.BUY ) {
+                    type = currentPrice.compareTo(triggerPrice) < 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
+                    orderPrice  = triggerPrice.multiply(new BigDecimal(1).add(maxMarketPriceRange));
+                } else {
+                    type = currentPrice.compareTo(triggerPrice) > 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
+                    orderPrice  = triggerPrice.multiply(new BigDecimal(1).subtract(maxMarketPriceRange));
+                }
+            } else if (type == OrderType.LIMIT) {
+                if (side == OrderSide.BUY ) {
+                    type = currentPrice.compareTo(triggerPrice) < 0 ? OrderType.STOP_LIMIT : OrderType.TAKE_PROFIT_LIMIT;
+                } else {
+                    type = currentPrice.compareTo(triggerPrice) > 0 ? OrderType.STOP_LIMIT : OrderType.TAKE_PROFIT_LIMIT;
+                }
+            }
+
+            signature = L2OrderSigner.signOrder(this.l2KeyPair, apiCredential.getAccountId(), symbol, size, orderPrice, limitFee, expireTime, clientOrderId,side);
+        }catch (IOException e) {
+            throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing an order with l2KeyPair");
+        }
+
+        RestApiRequest<Order> request = new RestApiRequest<>();
+        RequestParamsBuilder builder = RequestParamsBuilder.build()
+                .putToPost("symbol", symbol)
+                .putToPost("side", side.name())
+                .putToPost("type", type.name())
+                .putToPost("size", size.toPlainString())
+                .putToPost("price", orderPrice.toPlainString())
+                .putToPost("limitFee", limitFee.toPlainString())
+                .putToPost("expiration", String.valueOf(expireTime))
+                .putToPost("triggerPrice",String.valueOf(triggerPrice))
+                .putToPost("triggerPriceType",triggerPriceType)
+                .putToPost("timeInForce", timeInForce.name())
+                .putToPost("clientId", clientOrderId)
+                .putToPost("signature", signature)
+                .putToPost("reduceOnly", String.valueOf(reduceOnly));
+
+        request.request = createRequest(serverUrl, "/v1/create-order", builder);
+        request.jsonParser = (jsonWrapper -> {
+            jsonWrapper = jsonWrapper.getJsonObject("data");
+            Order order = new Order();
+            order.setOrderId(jsonWrapper.getString("orderId"));
+            order.setClientOrderId(jsonWrapper.getString("clientOrderId"));
+            order.setAccountId(jsonWrapper.getString("accountId"));
+            order.setSymbol(jsonWrapper.getString("symbol"));
+            order.setSide(jsonWrapper.getString("side"));
+            order.setPrice(new BigDecimal(jsonWrapper.getString("price")));
+            order.setLimitFee(new BigDecimal(jsonWrapper.getString("limitFee")));
+            order.setFee(new BigDecimal(!jsonWrapper.getString("fee").equals("") ? jsonWrapper.getString("fee") : "0"));
+            order.setLiquidateFee(new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
+            order.setTriggerPrice(new BigDecimal(jsonWrapper.getString("triggerPrice")));
+            order.setSize(new BigDecimal(jsonWrapper.getString("size")));
+            order.setType(jsonWrapper.getString("type"));
+            order.setStatus(jsonWrapper.getString("status"));
+            order.setTimeInForce(jsonWrapper.getString("timeInForce"));
+            order.setPostOnly(jsonWrapper.getBoolean("postOnly"));
+            order.setReduceOnly(jsonWrapper.getBoolean("reduceOnly"));
+            order.setLatestMatchFillPrice(new BigDecimal(jsonWrapper.getString("latestMatchFillPrice")));
+            order.setCumMatchFillSize(new BigDecimal(jsonWrapper.getString("cumMatchFillSize")));
+            order.setCumMatchFillValue(new BigDecimal(jsonWrapper.getString("cumMatchFillValue")));
+            order.setCumMatchFillFee(new BigDecimal(jsonWrapper.getString("cumMatchFillFee")));
+            order.setCumSuccessFillSize(new BigDecimal(jsonWrapper.getString("cumSuccessFillSize")));
+            order.setCumSuccessFillValue(new BigDecimal(jsonWrapper.getString("cumSuccessFillValue")));
+            order.setCumSuccessFillFee(new BigDecimal(jsonWrapper.getString("cumSuccessFillFee")));
+            order.setIsPositionTpsl(jsonWrapper.getBoolean("isPositionTpsl"));
+            order.setExpiresTime(jsonWrapper.getLong("expiresAt"));
+            order.setTriggerPriceType(jsonWrapper.getString("triggerPriceType"));
+            order.setCreatedTime(jsonWrapper.getLong("createdAt"));
+            order.setUpdatedTime(jsonWrapper.getLong("updatedTime"));
+            return order;
+        });
+        return request;
+
+
+    }
+
 
     public RestApiRequest<Map<String, String>> cancelOrder(String id) {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
@@ -449,7 +625,7 @@ class RestApiRequestImpl {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-connector-order-id", builder);
+        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             Map<String, String> dataMap = new HashMap<>();
             dataMap.put("data", jsonWrapper.getString("data"));
@@ -604,6 +780,34 @@ class RestApiRequestImpl {
             order.setCumSuccessFillSize(new BigDecimal(jsonWrapper.getString("cumSuccessFillSize")));
             order.setCumSuccessFillValue(new BigDecimal(jsonWrapper.getString("cumSuccessFillValue")));
             order.setCumSuccessFillFee(new BigDecimal(jsonWrapper.getString("cumSuccessFillFee")));
+
+            JsonWrapper openTpParam = jsonWrapper.getJsonObject("openTpParam");
+            if (openTpParam != null && openTpParam.containKey("clientOrderId")) {
+                OrderParams tpOrder = new OrderParams();
+                tpOrder.setSize(new BigDecimal(openTpParam.getString("size")));
+                tpOrder.setSide(OrderSide.valueOf(openTpParam.getString("side")));
+                tpOrder.setPrice(new BigDecimal(openTpParam.getString("price")));
+                tpOrder.setTriggerPrice(new BigDecimal(openTpParam.getString("triggerPrice")));
+                tpOrder.setTriggerPriceType(PriceType.valueOf(openTpParam.getString("triggerPriceType")));
+                tpOrder.setClientOrderId(openTpParam.getString("clientOrderId"));
+                order.setTakeProfitOrder(tpOrder);
+            }
+
+
+            JsonWrapper openSlParam = jsonWrapper.getJsonObject("openSlParam");
+            if (openSlParam != null && openSlParam.containKey("clientOrderId")) {
+                OrderParams slOrder = new OrderParams();
+                slOrder.setSize(new BigDecimal(openSlParam.getString("size")));
+                slOrder.setSide(OrderSide.valueOf(openSlParam.getString("side")));
+                slOrder.setPrice(new BigDecimal(openSlParam.getString("price")));
+                slOrder.setTriggerPrice(new BigDecimal(openSlParam.getString("triggerPrice")));
+                slOrder.setTriggerPriceType(PriceType.valueOf(openSlParam.getString("triggerPriceType")));
+                slOrder.setClientOrderId(openSlParam.getString("clientOrderId"));
+                order.setStopLossOrder(slOrder);
+            }
+
+
+
             return order;
         });
         return request;
@@ -612,8 +816,8 @@ class RestApiRequestImpl {
     public RestApiRequest<Order> getOrderByClientOrderId(String id) {
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("id", id);
-        request.request = createRequest(serverUrl, "/v1/order-by-connector-order-id", builder);
+                .putToPost("id", id);
+        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -885,6 +1089,38 @@ class RestApiRequestImpl {
             fundingRates.setFundingRates(fundingRateList);
 
             return fundingRates;
+        });
+        return request;
+    }
+
+
+    public RestApiRequest<Ticker> getTicker(String symbol) {
+        RestApiRequest<Ticker> request = new RestApiRequest<>();
+        RequestParamsBuilder builder = RequestParamsBuilder.build()
+                .putToUrl("symbol", symbol.replace("-",""));
+
+        request.request = createRequest(serverUrl, "/v1/ticker", builder);
+        request.jsonParser = (jsonWrapper -> {
+            JsonWrapperArray jsonWrapperArray = jsonWrapper.getJsonArray("data");
+
+            JsonWrapper wrapper = jsonWrapperArray.getJsonObjectAt(0);
+            Ticker ticker = new Ticker();
+            ticker.setSymbol(wrapper.getString("symbol"));
+            ticker.setPrice24hChange(new BigDecimal(wrapper.getString("price24hPcnt")));
+            ticker.setLastPrice(new BigDecimal(wrapper.getString("lastPrice")));
+            ticker.setHighPrice24h(new BigDecimal(wrapper.getString("highPrice24h")));
+            ticker.setLowPrice24h(new BigDecimal(wrapper.getString("lowPrice24h")));
+            ticker.setOraclePrice(new BigDecimal(wrapper.getString("oraclePrice")));
+            ticker.setIndexPrice(new BigDecimal(wrapper.getString("indexPrice")));
+            ticker.setOpenInterest(new BigDecimal(wrapper.getString("openInterest")));
+            ticker.setTurnover24h(new BigDecimal(wrapper.getString("turnover24h")));
+            ticker.setVolume24h(new BigDecimal(wrapper.getString("volume24h")));
+            ticker.setFundingRate(new BigDecimal(wrapper.getString("fundingRate")));
+            ticker.setPredictedFundingRate(new BigDecimal(wrapper.getString("predictedFundingRate")));
+            ticker.setNextFundingTime(wrapper.getString("nextFundingTime"));
+            ticker.setTradeCount(wrapper.getLong("tradeCount"));
+
+            return ticker;
         });
         return request;
     }

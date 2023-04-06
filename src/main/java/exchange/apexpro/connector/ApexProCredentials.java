@@ -21,6 +21,7 @@ public class ApexProCredentials {
 
         apexProCredentials.l2KeyPair = l2KeyPair;
         apexProCredentials.apiCredential = Onboard.generateApiCredential(apexProCredentials.web3Credentials, l2KeyPair.getPublicKey(), l2KeyPair.getPublicKeyYCoordinate(),networkId);
+        apexProCredentials.web3Credentials = Credentials.create(privateEthereumKey);
         return apexProCredentials;
 
     }

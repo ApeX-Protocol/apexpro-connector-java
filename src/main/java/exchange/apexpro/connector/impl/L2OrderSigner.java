@@ -7,6 +7,7 @@ import exchange.apexpro.connector.impl.utils.cryptohash.Keccak256;
 import exchange.apexpro.connector.impl.utils.ecdsa.Ecdsa;
 import exchange.apexpro.connector.impl.utils.ecdsa.PrivateKey;
 import exchange.apexpro.connector.impl.utils.ecdsa.Signature;
+import exchange.apexpro.connector.model.enums.OrderSide;
 import exchange.apexpro.connector.model.meta.Currency;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
 import exchange.apexpro.connector.model.meta.MultiChain;
@@ -26,7 +27,7 @@ import static exchange.apexpro.connector.exception.ApexProApiException.RUNTIME_E
 public class L2OrderSigner {
 
 
-    public static String signOrder(L2KeyPair l2KeyPair, long accountId, String symbol, BigDecimal size, BigDecimal price, BigDecimal limitFee, long expireTime, String clientOrderId) throws IOException {
+    public static String signOrder(L2KeyPair l2KeyPair, long accountId, String symbol, BigDecimal size, BigDecimal price, BigDecimal limitFee, long expireTime, String clientOrderId, OrderSide orderSide) throws IOException {
 
         PerpetualContract perpetualContract = ExchangeInfo.perpetualContract(symbol);
         Currency currency = perpetualContract.getSettleCurrency();
@@ -41,7 +42,7 @@ public class L2OrderSigner {
                         .longValueExact(),
                 limitFee.multiply(currency.getStarkExResolution()).longValueExact(),
                 expireTime / (60 * 60 * 1000L),
-                true,
+                orderSide == OrderSide.BUY,
                 Long.parseLong(Hashing.sha256()
                         .hashString(clientOrderId, StandardCharsets.UTF_8)
                         .toString()

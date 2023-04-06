@@ -26,6 +26,7 @@ public class Order {
     private BigDecimal size;
 
     private String type;
+
     private BigDecimal triggerPrice;
     private String triggerPriceType;
 
@@ -63,4 +64,7 @@ public class Order {
     private  Boolean isDeleverage; //True means this is a deleverage order produced by system;
     private  Boolean isLiquidate;  //True means this is a liquidation order produced by system;
     private Boolean isPositionTpsl; //Order is a Take-profit or Stop-Loss on true, otherwise is a normal order;
+
+    private OrderParams takeProfitOrder;
+    private OrderParams stopLossOrder;
 }

@@ -46,29 +46,21 @@ log.info("apexProCredentials:{} ",apexProCredentials);
 ### Trade Endpoint: Testing a new order
 
 ```
+
 //Initialize the exchange configuration information. This is optional because it will be loaded automatically when you call its internal member variables.
 ExchangeInfo.load();
 
-//Load the private credential
-PrivateConfig privateConfig = PrivateConfig.loadConfig();
-L2KeyPair l2KeyPair = privateConfig.l2KeyPair;
-ApiCredential apiCredential = privateConfig.apiCredential;
-
 //Prepare an order;
 String symbol = "BTC-USDC";
-BigDecimal takerFeeRate = new BigDecimal("0.0005"); //you can get this value through max(Account.takerFeeRate,Account.makerFeeRate)
 String clientId = UUID.randomUUID().toString();
 BigDecimal size = new BigDecimal("0.002");
 BigDecimal price = new BigDecimal("23300");
-BigDecimal limitFee = takerFeeRate.multiply(size).multiply(price).setScale(Math.max(0, takerFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
-long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
+BigDecimal maxFeeRate = new BigDecimal("0.0005"); //you can get this through max(Account.takerFeeRate,Account.makerFeeRate)
 
-//Sign the order with L2KeyPair
-String signature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, size, price, limitFee, expireTime, clientId);
-
-//Send order to ApexPro
-SyncRequestClient syncRequestClient = SyncRequestClient.create(apiCredential);
-Order order = syncRequestClient.createOrder(symbol, OrderSide.BUY, OrderType.LIMIT, size, price, limitFee, expireTime, OrderType.LIMIT, null, null, clientId, signature, false);
+//Send order to ApeXPro
+ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
+SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
+Order order = syncRequestClient.createOrder(symbol, OrderSide.BUY, OrderType.LIMIT, size, price, maxFeeRate,  TimeInForce.GOOD_TIL_CANCEL,  clientId,  false);
 log.info("Created Order:{} ",order);
 ```
 

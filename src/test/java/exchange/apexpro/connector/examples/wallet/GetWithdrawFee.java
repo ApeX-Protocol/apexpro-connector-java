@@ -1,5 +1,6 @@
 package exchange.apexpro.connector.examples.wallet;
 
+import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
@@ -11,7 +12,8 @@ public class GetWithdrawFee {
 
     public static void main(String[] args) {
         ExchangeInfo.load();
-        SyncRequestClient syncRequestClient = SyncRequestClient.create(PrivateConfig.loadConfig().apiCredential);
+        ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
+        SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
         ExchangeInfo.multiChain().getChains().forEach(chain -> {
             WithdrawalFee result = syncRequestClient.getWithdrawalFee(new BigDecimal("1000"), chain.getChainId());
