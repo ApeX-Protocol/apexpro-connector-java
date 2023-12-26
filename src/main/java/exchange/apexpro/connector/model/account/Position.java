@@ -11,12 +11,16 @@ public class Position {
     private BigDecimal entryPrice;
     private BigDecimal exitPrice;
     private BigDecimal size;
+    private BigDecimal fee;
     private String side;
     private BigDecimal customInitialMarginRate;
     private BigDecimal maxSize;
     private BigDecimal sumOpen;
     private BigDecimal sumClose;
-    private BigDecimal netFunding;
+
+    private BigDecimal fundingFee;
+
+    private String lightNumbers;
     private String accountId;
     private Long updatedTime;
     private Long closedTime;

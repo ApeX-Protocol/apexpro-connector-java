@@ -12,19 +12,11 @@ import java.util.List;
 public class Account {
 
     private String id;
-
-    private String starkKey;
-
+    private String starkKey; // This is an alias of L2Key.
     private String positionId;
-
-    private BigDecimal takerFeeRate;
-
-    private BigDecimal makerFeeRate;
-
+    private List<ContractAreaConfig> contractAreaConfigList;
     private Long createdTime;
-
     private List<Wallet> wallets;
-
-    private List<OpenPosition> openPositions;
+    private List<Position> openPositions;
 
 }

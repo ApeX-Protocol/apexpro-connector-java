@@ -11,5 +11,7 @@ public class HistoryValueEntry {
     private String accountTotalValue;
 
     private Long dateTime;
+
+    private String collateralToken;
     
 }

@@ -76,7 +76,7 @@ public interface SyncRequestClient {
 
     /**
      * GET Retrieve User Account Data
-     * GET /v1/account
+     * GET /v2/account
      *
      * @return account
      */
@@ -85,16 +85,15 @@ public interface SyncRequestClient {
 
     /**
      * GET Account's total equity & available balance
-     * GET /v1/account
+     * GET /v2/account
      *
-     * @return account
+     * @return list of collateral assets
      */
-    Balance getBalance();
+    List<Balance> getBalance();
 
     /**
      * GET User Historial Profit and Loss
-     * GET /v1/historical-pnl
-     *
+     * GET /v2/historical-pnl
      * @param beginTimeInclusive StartTime
      * @param endTimeExclusive   EndTime
      * @param symbol             Symbol
@@ -106,15 +105,16 @@ public interface SyncRequestClient {
 
     /**
      * GET Yesterday's Profit & Loss
-     * GET /v1/yesterday-pnl
+     * GET /v2/yesterday-pnl
+     * @param contractArea ApiConstants.CONTRACT_AREA_USDC | ApiConstants.CONTRACT_AREA_USDT
      *
      * @return yesterdayPnl
      */
-    YesterdayPnl getYesterdayPnl();
+    YesterdayPnl getYesterdayPnl(String contractArea);
 
     /**
      * GET Historical Asset Value
-     * GET /v1/history-value
+     * GET /v2/history-value
      *
      * @param startTime Start time
      * @param endTime   End time
@@ -125,7 +125,7 @@ public interface SyncRequestClient {
 
     /**
      * GET Trade History
-     * GET /v1/fills
+     * GET /v2/fills
      *
      * @param symbol             Symbol
      * @param limit              default at 100
@@ -139,7 +139,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Creating Orders
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
@@ -157,7 +157,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Creating Orders with TPSL(Take-profit/Stop-loss)
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
@@ -177,7 +177,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Creating Conditional Order
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
@@ -200,7 +200,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Cancel Order
-     * POST /v1/delete-order
+     * POST /v2/delete-order
      *
      * @param id order id
      * @return result map
@@ -209,7 +209,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Cancel Order By ClientOrderId
-     * POST /v1/delete-connector-order-id
+     * POST /v2/delete-client-order-id
      *
      * @param id connector id
      * @return result map
@@ -218,23 +218,25 @@ public interface SyncRequestClient {
 
     /**
      * GET Open Orders
-     * GET /v1/open-orders
+     * GET /v2/open-orders
+     * @param contractArea valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
      */
-    OpenOrders getOpenOrders();
+    OpenOrders getOpenOrders(String contractArea);
 
 
     /**
      * POST Cancel all Open Orders
-     * POST /v1/delete-open-orders
+     * POST /v2/delete-open-orders
      *
      * @param symbol "BTC-USDC,ETH-USDC", Cancel all orders if none
+     * @param contractArea only orders in this contract area will be canceled. valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
      * @return empty
      */
-    Map<String, String> cancelAllOpenOrders(String symbol);
+    Map<String, String> cancelAllOpenOrders(String symbol,String contractArea);
 
     /**
      * GET All Order History
-     * GET /v1/history-orders
+     * GET /v2/history-orders
      *
      * @param symbol trading pair
      * @param status PENDING,OPEN,FILLED,CANCELING,CANCELED,UNTRIGGERED
@@ -250,7 +252,7 @@ public interface SyncRequestClient {
 
     /**
      * GET Order ID
-     * GET /v1/get-order
+     * GET /v2/get-order
      *
      * @param id order id
      * @return order
@@ -259,7 +261,7 @@ public interface SyncRequestClient {
 
     /**
      * GET Order by clientOrderId
-     * GET /v1/order-by-connector-order-id
+     * GET /v2/order-by-client-id
      *
      * @param id connector order id
      * @return order
@@ -272,7 +274,7 @@ public interface SyncRequestClient {
      *
      * @param limit              Page limit default at 100
      * @param page               Page numbers start from 0
-     * @param currencyId         Filter to show only currency ID, all will be searched if the field is empty
+     * @param currencyId         USDT|USDC
      * @param beginTimeInclusive Start time
      * @param endTimeExclusive   End time
      * @param chainIds           Check for multiple chainID records
@@ -288,18 +290,19 @@ public interface SyncRequestClient {
      * @param page               Page numbers start from 0;
      * @param beginTimeInclusive Start time;
      * @param endTimeExclusive   End time;
+     * @param currencyId valid in [USDT,USDC]
      * @return wallet records
      */
-    WithdrawalList getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive);
+    WithdrawalList getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive);
 
     /**
      * POST User Withdrawal
-     * POST /v1/create-withdrawal
+     * POST /v2/create-withdrawal
      *
      * @param amount     Amount
-     * @param clientId   Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId   Unique id.
      * @param expiration Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
-     * @param currencyId      Asset (in USDC) being withdrawn.
+     * @param currencyId      Asset (in USDC | USDT) being withdrawn.
      * @param address    Your ethereum address only registered on ApexPro.
      * @param signature  The signature for the wallet, signed with the account's STARK private key.
      * @return withdrawal result
@@ -309,12 +312,12 @@ public interface SyncRequestClient {
 
     /**
      * POST Create Fast Withdrawal Order
-     * POST /v1/fast-withdraw
+     * POST /v2/fast-withdraw
      *
      * @param amount       Amount
-     * @param clientId     Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId     Unique id.
      * @param expiration   Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
-     * @param currencyId        Asset (in USDC) being withdrawn.
+     * @param currencyId        Asset (in USDC/USDT) being withdrawn.
      * @param signature    The signature for the wallet, signed with the account's STARK private key.
      * @param address      eth address
      * @param fee          Fees
@@ -325,10 +328,10 @@ public interface SyncRequestClient {
 
     /**
      * POST Cross-Chain Withdrawals
-     * POST /v1/cross-chain-withdraw
+     * POST /v2/cross-chain-withdraw
      *
      * @param amount       Amount
-     * @param clientId     Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId     Unique id.
      * @param expiration   Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
      * @param currencyId        Asset (in USDC) being withdrawn.
      * @param signature    The signature for the wallet, signed with the account's STARK private key.
@@ -341,18 +344,18 @@ public interface SyncRequestClient {
 
     /**
      * Returns calculated withdrawal fee for Fast & Cross-Chain withdrawal & total available fund pool amount to withdraw;
-     * GET /v1/uncommon-withdraw-fee
+     * GET /v2/uncommon-withdraw-fee
      *
-     * @param amount  USDC
+     * @param collateralToken  valid params in [ApiConstants.COLLATERAL_ASSET_USDC,ApiConstants.COLLATERAL_ASSET_USDT]
      * @param chainId chainId
      * @return WithdrawalFee
      */
-    WithdrawalFee getWithdrawalFee(BigDecimal amount, long chainId);
+    WithdrawalFee getWithdrawalFee(String collateralToken,BigDecimal amount, long chainId);
 
 
     /**
      * Get Worst price & bidOne price & askOne price from orderbook;
-     * GET /v1/get-worst-price
+     * GET /v2/get-worst-price
      * @param side BUY or SELL order
      * @param size the size of Order placing you want
      * @return OrderBookPrice

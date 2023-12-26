@@ -12,7 +12,7 @@ import exchange.apexpro.connector.model.user.L2KeyPair;
 
 import java.math.BigDecimal;
 
-import static exchange.apexpro.connector.constant.ApiConstants.COLLATERAL_ASSET;
+import static exchange.apexpro.connector.constant.ApiConstants.COLLATERAL_ASSET_USDC;
 import static exchange.apexpro.connector.constant.ApiConstants.ORDER_SIGNATURE_EXPIRATION_BUFFER_HOURS;
 
 public class CreateWithdrawalOrder {
@@ -30,14 +30,15 @@ public class CreateWithdrawalOrder {
         long expireTimeInHour = (System.currentTimeMillis() / (60L * 60L * 1000L)) + ORDER_SIGNATURE_EXPIRATION_BUFFER_HOURS;
         long expireTime = expireTimeInHour * 3600L * 1000L;
 
-        String currency = COLLATERAL_ASSET;
+        String currency = COLLATERAL_ASSET_USDC;
         String address = apexProCredentials.web3Credentials.getAddress();
         Long chainId = 97l;
-        WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(amount,chainId);
+        WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(currency,amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();
 
-        String signature = L2OrderSigner.signCrossChainWithdraw(l2KeyPair, apiCredential.getAccountId(), amount, clientId, expireTimeInHour, currency, address, fee, chainId);
-        WithdrawalResult result = syncRequestClient.createFastWithdrawalOrder(amount, clientId, expireTime, currency, signature, address, fee, chainId);
+        String signature = L2OrderSigner.signWithdrawalOrder(l2KeyPair, apiCredential.getAccountId(),
+                address,amount, clientId, expireTimeInHour, currency);
+        WithdrawalResult result = syncRequestClient.createWithdrawalOrder(amount, clientId, expireTime, currency, address,signature);
         System.out.println(result);
     }
 }

@@ -9,7 +9,7 @@ public class GetHistoryOrders {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        HistoryOrders result = syncRequestClient.getHistoryOrders("BTC-USDC", null, null, null, 0l, 0l, 100, 0);
+        HistoryOrders result = syncRequestClient.getHistoryOrders("BTC-USDT", null, null, null, 0l, 0l, 100, 0);
         System.out.println(result);
     }
 }

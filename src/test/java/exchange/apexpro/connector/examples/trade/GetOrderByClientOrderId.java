@@ -9,7 +9,7 @@ public class GetOrderByClientOrderId {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        Order result = syncRequestClient.getOrderByClientOrderId("f162b9a2-2f24-4cfe-bf23-f6e18ff7cbce");
+        Order result = syncRequestClient.getOrderByClientOrderId("8ee58196-f4bf-47fd-88a0-417dc0f8ddbf");
         System.out.println("View order: " +result);
     }
 }

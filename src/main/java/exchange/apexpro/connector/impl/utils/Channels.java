@@ -73,7 +73,7 @@ public abstract class Channels {
 
         JSONObject loginJson = new JSONObject();
         JSONArray topics = new JSONArray();
-        topics.add("ws_accounts_v1");
+        topics.add("ws_accounts_v2");
         loginJson.put("type","login");
         loginJson.put("topics",topics);
 

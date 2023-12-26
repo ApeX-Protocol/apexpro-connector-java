@@ -1,5 +1,6 @@
 package exchange.apexpro.connector.impl.utils;
 
+import exchange.apexpro.connector.constant.ApiConstants;
 import exchange.apexpro.connector.impl.utils.eip712.EIP712TypedDataStruct;
 import exchange.apexpro.connector.impl.utils.eip712.SolidityPackEncoder;
 import exchange.apexpro.connector.impl.utils.eip712.TypedData;
@@ -19,13 +20,13 @@ import java.util.List;
 
 import static exchange.apexpro.connector.constant.ApiConstants.*;
 
+
 public class OnboardingHashHelper {
 
     public static final String VERSION = "1.0";
 
     /**
-     * 返回用于 L2 Key 签名消息体的HASH，
-     * @param chainId
+     * Returns the HASH for the L2 Key signature body
      * @return
      */
     public static String buildL2KeySigningText(int chainId){
@@ -34,14 +35,14 @@ public class OnboardingHashHelper {
         String message = "name: "+BROKER_NAME+"\n" +
                 "version: 1.0\n" +
                 "envId: "+chainId+"\n" +
-                "action: "+OFF_CHAIN_KEY_DERIVATION_ACTION+"\n" +
+                "action: "+ OFF_CHAIN_KEY_DERIVATION_ACTION+"\n" +
                 "onlySignOn: "+OFF_CHAIN_ONBOARDING_SIGN_DOMAIN;
 
         return message;
     }
 
     /**
-     * 返回用于 onboarding 签名消息体的HASH，
+     * Returns the HASH for the onboarding signature body,
      * @param chainId
      * @param nonce
      * @return

@@ -1,6 +1,7 @@
 package exchange.apexpro.connector.impl;
 
 import com.google.common.hash.Hashing;
+import exchange.apexpro.connector.constant.ApiConstants;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.L2SignatureUtil;
 import exchange.apexpro.connector.impl.utils.cryptohash.Keccak256;
@@ -64,7 +65,8 @@ public class L2OrderSigner {
 
     public static String signWithdrawalOrder(L2KeyPair l2KeyPair, Long accountId,String address, BigDecimal amount, String clientId, Long expireTimeInHour, String currencyId) {
 
-        Currency currency = ExchangeInfo.currency(currencyId);
+        Currency currency = ExchangeInfo.currency(currencyId,ExchangeInfo.getContractArea(currencyId));
+
         BigInteger msgHash = L2SignatureUtil.hashMsgWithdrawToAddress(
                 accountId,
                 currency.getStarkExAssetId(),
@@ -92,13 +94,18 @@ public class L2OrderSigner {
     }
 
     public static String signCrossChainWithdraw(L2KeyPair l2KeyPair, Long accountId, BigDecimal amount, String clientId, Long expireTimeInHour, String currencyId, String address, BigDecimal fee, Long chainId){
-        Currency currency = ExchangeInfo.currency(currencyId);
+        Currency currency = null;
+        String contractArea = ExchangeInfo.getContractArea(currencyId);
+        if (currencyId.toLowerCase().equals(ApiConstants.COLLATERAL_ASSET_USDC.toLowerCase()))
+            currency = ExchangeInfo.currency(currencyId,ApiConstants.CONTRACT_AREA_USDC);
+        else if (currencyId.toLowerCase().equals(ApiConstants.COLLATERAL_ASSET_USDT.toLowerCase()))
+            currency = ExchangeInfo.currency(currencyId,ApiConstants.CONTRACT_AREA_USDT);
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(contractArea).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         if (!chain.isPresent())
             throw new ApexProApiException(RUNTIME_ERROR,"In valid chainId:"+chainId);
 
-        long lpAccountId  = ExchangeInfo.global().getCrossChainAccountId();
+        long lpAccountId  = ExchangeInfo.global(contractArea).getCrossChainAccountId();
 
         Long nonce = Long.parseLong(Hashing.sha256()
                 .hashString(clientId, StandardCharsets.UTF_8)
@@ -109,7 +116,7 @@ public class L2OrderSigner {
         BigInteger msgHash = L2SignatureUtil.hashMsgTransfer(
                 currency.getStarkExAssetId(),
                 "0x0",
-                ExchangeInfo.global().getCrossChainL2Key(),
+                ExchangeInfo.global(contractArea).getCrossChainL2Key(),
                 accountId,
                 lpAccountId,
                 accountId,
@@ -136,17 +143,17 @@ public class L2OrderSigner {
     }
 
     public static String signFastWithdraw(L2KeyPair l2KeyPair, Long accountId, BigDecimal amount, String clientId, Long expireTimeInHour, String currencyId, String address, BigDecimal fee, Long chainId) {
+        String contractArea = ExchangeInfo.getContractArea(currencyId);
+        Currency currency = ExchangeInfo.currency(currencyId,ExchangeInfo.getContractArea(contractArea));
 
-        Currency currency = ExchangeInfo.currency(currencyId);
-
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(contractArea).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         if (!chain.isPresent())
             throw new ApexProApiException(RUNTIME_ERROR,"In valid chainId:"+chainId);
 
         MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
-        long lpAccountId  = ExchangeInfo.global().getFastWithdrawAccountId();
+        long lpAccountId  = ExchangeInfo.global(contractArea).getFastWithdrawAccountId();
 
         Long nonce = Long.parseLong(Hashing.sha256()
                 .hashString(clientId, StandardCharsets.UTF_8)
@@ -161,13 +168,13 @@ public class L2OrderSigner {
         keccak256.update(L2SignatureUtil.LeftPadBytes(BigInteger.valueOf(nonce).toByteArray(), 32));
         byte[] fact = keccak256.digest();
 
-        BigInteger condition=L2SignatureUtil.calcFastWithdrawCondition(ExchangeInfo.global().getFastWithdrawFactRegisterAddress(),fact);
+        BigInteger condition=L2SignatureUtil.calcFastWithdrawCondition(ExchangeInfo.global(contractArea).getFastWithdrawFactRegisterAddress(),fact);
 
 
         BigInteger msgHash = L2SignatureUtil.hashMasFastWithdraw(
                 new BigInteger(currency.getStarkExAssetId().substring(2), 16),
                 BigInteger.valueOf(0),
-                new BigInteger(ExchangeInfo.global().getFastWithdrawL2Key().substring(2),16),
+                new BigInteger(ExchangeInfo.global(contractArea).getFastWithdrawL2Key().substring(2),16),
                 condition,
                 accountId,
                 lpAccountId,

@@ -3,7 +3,6 @@ package exchange.apexpro.connector.impl;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
-import exchange.apexpro.connector.SyncRequestClient;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.ApiSignHelper;
 import exchange.apexpro.connector.impl.utils.JsonWrapper;
@@ -29,7 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-import static exchange.apexpro.connector.constant.ApiConstants.URL_SUFFIX;
+import static exchange.apexpro.connector.constant.ApiConstants.*;
 import static exchange.apexpro.connector.exception.ApexProApiException.EXEC_ERROR;
 
 @Slf4j
@@ -92,7 +91,7 @@ class RestApiRequestImpl {
         RestApiRequest<String> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
 
-        request.request = createRequest(serverUrl, "/v1/symbols", builder);
+        request.request = createRequest(serverUrl, "/v2/symbols", builder);
 
         request.jsonParser = (jsonWrapper -> jsonWrapper.getString("data"));
         return request;
@@ -116,7 +115,7 @@ class RestApiRequestImpl {
     }
 
 
-    RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
+    RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate,String contractArea) {
         RestApiRequest<ApiCredential> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("ethereumAddress", ethAddress)
@@ -124,11 +123,11 @@ class RestApiRequestImpl {
                 .putToPost("starkKeyYCoordinate", l2KeyYCoordinate)
                 .putToPost("walletName", "java-sdk")
                 .putToPost("platform", "api")
-
+                .putToPost("token", contractArea)
                 .putToHeader("apex-ethereum-address", ethAddress)
                 .putToHeader("apex-signature", onboardingSignature);
 
-        request.request = createRequest(serverUrl, "/v1/onboarding", builder);
+        request.request = createRequest(serverUrl, "/v2/onboarding", builder);
 
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper jsonData = jsonWrapper.getJsonObject("data");
@@ -205,21 +204,34 @@ class RestApiRequestImpl {
     public RestApiRequest<Account> getAccount() {
         RestApiRequest<Account> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/account", builder);
+        request.request = createRequest(serverUrl, "/v2/account", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
+
             Account account = new Account();
             account.setId(jsonWrapper.getString("id"));
             account.setStarkKey(jsonWrapper.getString("starkKey"));
             account.setPositionId(jsonWrapper.getString("positionId"));
-            account.setTakerFeeRate(new BigDecimal(jsonWrapper.getString("takerFeeRate")));
-            account.setMakerFeeRate(new BigDecimal(jsonWrapper.getString("makerFeeRate")));
-            account.setCreatedTime(jsonWrapper.getLong("createdAt"));
+
+            JsonWrapperArray accountsArray = jsonWrapper.getJsonArray("accounts");
+            List<ContractAreaConfig> contractAreaConfigs = new LinkedList<>();
+            accountsArray.forEach(item -> {
+                ContractAreaConfig contractAreaConfig = new ContractAreaConfig();
+                contractAreaConfig.setContractArea(item.getString("token").toUpperCase());
+                contractAreaConfig.setTakerFeeRate(new BigDecimal(item.getString("takerFeeRate")));
+                contractAreaConfig.setMakerFeeRate(new BigDecimal(item.getString("makerFeeRate")));
+                contractAreaConfig.setMinInitialMarginRate(new BigDecimal(item.getString("minInitialMarginRate")));
+                contractAreaConfig.setCreatedTime(item.getLong("createdAt"));
+                contractAreaConfigs.add(contractAreaConfig);
+            });
+            account.setContractAreaConfigList(contractAreaConfigs);
+
+
             List<Wallet> walletList = new LinkedList<>();
             JsonWrapperArray walletsArray = jsonWrapper.getJsonArray("wallets");
             walletsArray.forEach((item) -> {
                 Wallet wallet = new Wallet();
-                wallet.setAsset(item.getString("asset"));
+                wallet.setToken(item.getString("asset"));
                 wallet.setBalance(item.getString("balance"));
                 wallet.setPendingDepositAmount(item.getString("pendingDepositAmount"));
                 wallet.setPendingWithdrawAmount(item.getString("pendingWithdrawAmount"));
@@ -229,18 +241,17 @@ class RestApiRequestImpl {
             });
             account.setWallets(walletList);
 
-            List<OpenPosition> openPositionList = new LinkedList<>();
+            List<Position> openPositionList = new LinkedList<>();
             JsonWrapperArray openPositionsArray = jsonWrapper.getJsonArray("openPositions");
             openPositionsArray.forEach((item) -> {
-                OpenPosition position = new OpenPosition();
+                Position position = new Position();
                 position.setSymbol(item.getString("symbol"));
                 position.setSide(item.getString("side"));
-                position.setSize(item.getString("size"));
-                position.setEntryPrice(item.getString("entryPrice"));
-                position.setFee(item.getString("fee"));
-                position.setFundingFee(item.getString("fundingFee"));
-                position.setCreatedAt(item.getString("createdAt"));
-                position.setUpdatedTime(item.getString("updatedTime"));
+                position.setSize(new BigDecimal(item.getString("size")));
+                position.setEntryPrice(new BigDecimal(item.getString("entryPrice")));
+                position.setFee(new BigDecimal(item.getString("fee")));
+                position.setFundingFee(new BigDecimal(item.getString("fundingFee")));
+                position.setUpdatedTime(item.getLong("updatedAt"));
                 position.setLightNumbers(item.getString("lightNumbers"));
                 openPositionList.add(position);
             });
@@ -251,35 +262,58 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<Balance> getBalance() {
-        RestApiRequest<Balance> request = new RestApiRequest<>();
+    public RestApiRequest<List<Balance>> getBalance() {
+        RestApiRequest<List<Balance>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/account-balance", builder);
+        request.request = createRequest(serverUrl, "/v2/account-balance", builder);
         request.jsonParser = (jsonWrapper -> {
-            JsonWrapper data = jsonWrapper.getJsonObject("data");
-            Balance balance = new Balance();
+            List<Balance> balances = new ArrayList<>();
+            jsonWrapper = jsonWrapper.getJsonObject("data");
+            if (jsonWrapper.containKey("usdtBalance")) {
+                JsonWrapper data = jsonWrapper.getJsonObject("usdtBalance");
+                Balance balance = new Balance();
+                balance.setToken(COLLATERAL_ASSET_USDT);
+                balance.setAvailable(new BigDecimal(data.getString("availableBalance")));
+                balance.setTotalEquity(new BigDecimal(data.getString("totalEquityValue")));
+                balance.setTotalInitialMargin(new BigDecimal(data.getString("initialMargin")));
+                balance.setTotalMaintenanceMargin(new BigDecimal(data.getString("maintenanceMargin")));
+                balance.setUpdatedTime(Calendar.getInstance().getTimeInMillis());
+                balances.add(balance);
+            }
 
-            balance.setAvailable(new BigDecimal(data.getString("availableBalance")));
-            balance.setTotalEquity(new BigDecimal(data.getString("totalEquityValue")));
-            balance.setTotalInitialMargin(new BigDecimal(data.getString("initialMargin")));
-            balance.setTotalMaintenanceMargin(new BigDecimal(data.getString("maintenanceMargin")));
-            balance.setUpdatedTime(Calendar.getInstance().getTimeInMillis());
-            return balance;
+            if (jsonWrapper.containKey("usdcBalance")) {
+                JsonWrapper data = jsonWrapper.getJsonObject("usdcBalance");
+                Balance balance = new Balance();
+                balance.setToken(COLLATERAL_ASSET_USDC);
+                balance.setAvailable(new BigDecimal(data.getString("availableBalance")));
+                balance.setTotalEquity(new BigDecimal(data.getString("totalEquityValue")));
+                balance.setTotalInitialMargin(new BigDecimal(data.getString("initialMargin")));
+                balance.setTotalMaintenanceMargin(new BigDecimal(data.getString("maintenanceMargin")));
+                balance.setUpdatedTime(Calendar.getInstance().getTimeInMillis());
+                balances.add(balance);
+            }
+
+            return balances;
         });
         return request;
     }
 
 
     public RestApiRequest<HistoryPnl> getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit) {
+
+        String contractArea = ExchangeInfo.getContractAreaBySymbol(symbol);
+
+
         RestApiRequest<HistoryPnl> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("beginTimeInclusive", String.valueOf(beginTimeInclusive))
                 .putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive))
                 .putToUrl("type", "CLOSE_POSITION")
                 .putToUrl("symbol", symbol)
+                .putToUrl("token",contractArea)
                 .putToUrl("page", String.valueOf(page))
                 .putToUrl("limit", String.valueOf(limit));
-        request.request = createRequest(serverUrl, "/v1/historical-pnl", builder);
+        request.request = createRequest(serverUrl, "/v2/historical-pnl", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryPnl result = new HistoryPnl();
@@ -303,13 +337,16 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<YesterdayPnl> getYesterdayPnl() {
+    public RestApiRequest<YesterdayPnl> getYesterdayPnl(String contractArea) {
         RestApiRequest<YesterdayPnl> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/yesterday-pnl", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build()
+                .putToUrl("token",contractArea);
+
+        request.request = createRequest(serverUrl, "/v2/yesterday-pnl", builder);
         request.jsonParser = (jsonWrapper -> {
             YesterdayPnl result = new YesterdayPnl();
-            result.setPnl(new BigDecimal(jsonWrapper.getString("data")));
+            String value = jsonWrapper.getString("data");
+            result.setPnl(new BigDecimal(Strings.isEmpty(value)? "0" : value));
             return result;
         });
         return request;
@@ -320,18 +357,31 @@ class RestApiRequestImpl {
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("endTime", String.valueOf(endTime))
                 .putToUrl("startTime", String.valueOf(startTime));
-        request.request = createRequest(serverUrl, "/v1/history-value", builder);
+        request.request = createRequest(serverUrl, "/v2/history-value", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryValue result = new HistoryValue();
             List<HistoryValueEntry> historyValueList = new LinkedList<>();
-            JsonWrapperArray historyValuesArray = jsonWrapper.getJsonArray("historyValues");
+            JsonWrapper jsonWrapperUsdc = jsonWrapper.getJsonObject("usdcHistoryValues");
+            JsonWrapper jsonWrapperUsdt = jsonWrapper.getJsonObject("usdtHistoryValues");
+            JsonWrapperArray historyValuesArray = jsonWrapperUsdc.getJsonArray("historyValues");
             historyValuesArray.forEach((item) -> {
                 HistoryValueEntry element = new HistoryValueEntry();
+                element.setCollateralToken(COLLATERAL_ASSET_USDC);
                 element.setAccountTotalValue(item.getString("accountTotalValue"));
                 element.setDateTime(item.getLong("dateTime"));
                 historyValueList.add(element);
             });
+
+            historyValuesArray = jsonWrapperUsdt.getJsonArray("historyValues");
+            historyValuesArray.forEach((item) -> {
+                HistoryValueEntry element = new HistoryValueEntry();
+                element.setCollateralToken(COLLATERAL_ASSET_USDT);
+                element.setAccountTotalValue(item.getString("accountTotalValue"));
+                element.setDateTime(item.getLong("dateTime"));
+                historyValueList.add(element);
+            });
+
             result.setHistoryValues(historyValueList);
             return result;
         });
@@ -339,9 +389,12 @@ class RestApiRequestImpl {
     }
 
     public RestApiRequest<OrderFills> getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
+
+
         RestApiRequest<OrderFills> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
+                .putToUrl("token",ExchangeInfo.getContractAreaBySymbol(symbol))
                 .putToUrl("page", String.valueOf(page))
                 .putToUrl("limit", String.valueOf(limit));
                 if (beginTimeInclusive > 0)
@@ -349,7 +402,7 @@ class RestApiRequestImpl {
                 if (endTimeExclusive > 0)
                     builder.putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive));
 
-        request.request = createRequest(serverUrl, "/v1/fills", builder);
+        request.request = createRequest(serverUrl, "/v2/fills", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             OrderFills result = new OrderFills();
@@ -361,7 +414,6 @@ class RestApiRequestImpl {
                 orderFill.setId(item.getString("id"));
                 orderFill.setClientOrderId(item.getString("clientId"));
                 orderFill.setOrderId(item.getString("orderId"));
-                orderFill.setAccountId(item.getString("accountId"));
                 orderFill.setSymbol(item.getString("symbol"));
 
                 orderFill.setPrice(new BigDecimal(item.getString("price")));
@@ -467,7 +519,7 @@ class RestApiRequestImpl {
                     .putToPost("slSignature",slSignature);
         }
         log.info("request.post:{}",builder.getPostData());
-        request.request = createRequest(serverUrl, "/v1/create-order", builder);
+        request.request = createRequest(serverUrl, "/v2/create-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -568,7 +620,7 @@ class RestApiRequestImpl {
                 .putToPost("signature", signature)
                 .putToPost("reduceOnly", String.valueOf(reduceOnly));
 
-        request.request = createRequest(serverUrl, "/v1/create-order", builder);
+        request.request = createRequest(serverUrl, "/v2/create-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -612,7 +664,7 @@ class RestApiRequestImpl {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-order", builder);
+        request.request = createRequest(serverUrl, "/v2/delete-order", builder);
         request.jsonParser = (jsonWrapper -> {
             Map<String, String> dataMap = new HashMap<>();
             dataMap.put("data", jsonWrapper.getString("data"));
@@ -625,7 +677,7 @@ class RestApiRequestImpl {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
+        request.request = createRequest(serverUrl, "/v2/delete-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             Map<String, String> dataMap = new HashMap<>();
             dataMap.put("data", jsonWrapper.getString("data"));
@@ -634,10 +686,10 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<OpenOrders> getOpenOrders() {
+    public RestApiRequest<OpenOrders> getOpenOrders(String contractArea) {
         RestApiRequest<OpenOrders> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/open-orders", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("token",contractArea);
+        request.request = createRequest(serverUrl, "/v2/open-orders", builder);
         request.jsonParser = (jsonWrapper -> {
             OpenOrders result = new OpenOrders();
             List<Order> orders = new LinkedList<>();
@@ -680,11 +732,13 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Map<String, String>> cancelAllOpenOrders(String symbol) {
+    public RestApiRequest<Map<String, String>> cancelAllOpenOrders(String symbol,String contractArea) {
+
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("symbol", symbol);
-        request.request = createRequest(serverUrl, "/v1/delete-open-orders", builder);
+                .putToPost("symbol", symbol)
+                .putToPost("token",contractArea);
+        request.request = createRequest(serverUrl, "/v2/delete-open-orders", builder);
         request.jsonParser = (jsonWrapper -> new HashMap<>());
         return request;
     }
@@ -693,6 +747,7 @@ class RestApiRequestImpl {
         RestApiRequest<HistoryOrders> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
+                .putToUrl("token",ExchangeInfo.getContractAreaBySymbol(symbol))
                 .putToUrl("status", status != null ? status.name() : "")
                 .putToUrl("side", side != null ? side.name() : "")
                 .putToUrl("type", orderType != null ? orderType.name() : "")
@@ -700,7 +755,7 @@ class RestApiRequestImpl {
                 .putToUrl("beginTimeInclusive", beginTimeInclusive > 0 ? String.valueOf(beginTimeInclusive) : "")
                 .putToUrl("endTimeExclusive", endTimeExclusive > 0 ? String.valueOf(endTimeExclusive) : "")
                 .putToUrl("page", String.valueOf(page));
-        request.request = createRequest(serverUrl, "/v1/history-orders", builder);
+        request.request = createRequest(serverUrl, "/v2/history-orders", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryOrders result = new HistoryOrders();
@@ -749,11 +804,16 @@ class RestApiRequestImpl {
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("id", id);
-        request.request = createRequest(serverUrl, "/v1/get-order", builder);
+        request.request = createRequest(serverUrl, "/v2/get-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
             order.setOrderId(jsonWrapper.getString("id"));
+
+            if (Strings.isEmpty(order.getOrderId())) {
+                throw new ApexProApiException(EXEC_ERROR,"order not found by given id="+id);
+            }
+
             order.setClientOrderId(jsonWrapper.getString("clientOrderId"));
             order.setAccountId(jsonWrapper.getString("accountId"));
             order.setSymbol(jsonWrapper.getString("symbol"));
@@ -816,8 +876,8 @@ class RestApiRequestImpl {
     public RestApiRequest<Order> getOrderByClientOrderId(String id) {
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
+                .putToUrl("id", id);
+        request.request = createRequest(serverUrl, "/v2/order-by-client-id", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -894,15 +954,16 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalList> getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
+    public RestApiRequest<WithdrawalList> getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
         RestApiRequest<WithdrawalList> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("limit", String.valueOf(limit))
                 .putToUrl("page", String.valueOf(page))
+                .putToUrl("currencyId", currencyId)
                 .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
                 .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
                 .putToUrl("transferType", "WITHDRAW,FAST_WITHDRAW,CROSS_WITHDRAW");
-        request.request = createRequest(serverUrl, "/v1/transfers", builder);
+        request.request = createRequest(serverUrl, "/v2/transfers", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             WithdrawalList result = new WithdrawalList();
@@ -940,7 +1001,7 @@ class RestApiRequestImpl {
                 .putToPost("asset", currencyId)
                 .putToPost("ethAddress",address)
                 .putToPost("signature", signature);
-        request.request = createRequest(serverUrl, "/v1/create-withdrawal-to-address", builder);
+        request.request = createRequest(serverUrl, "/v2/create-withdrawal-to-address", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             JsonWrapper withdrawJsonWrapper = jsonWrapper.getJsonObject("withdraw");
@@ -954,7 +1015,7 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalResult> fastWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractArea(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
@@ -970,7 +1031,7 @@ class RestApiRequestImpl {
                 .putToPost("fee", fee)
                 .putToPost("chainId", chainId)
                 .putToPost("lpAccountId", lpAccountId);
-        request.request = createRequest(serverUrl, "/v1/fast-withdraw", builder);
+        request.request = createRequest(serverUrl, "/v2/fast-withdraw", builder);
         request.jsonParser = (jsonWrapper -> {
 
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -986,7 +1047,7 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalResult> crossChainWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractArea(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
@@ -1002,7 +1063,7 @@ class RestApiRequestImpl {
                 .putToPost("fee", fee)
                 .putToPost("chainId", chainId)
                 .putToPost("lpAccountId", lpAccountId);
-        request.request = createRequest(serverUrl, "/v1/cross-chain-withdraw", builder);
+        request.request = createRequest(serverUrl, "/v2/cross-chain-withdraw", builder);
         request.jsonParser = (jsonWrapper -> {
 
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -1016,12 +1077,14 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalFee> getWithdrawalFee(BigDecimal amount, long chainId) {
+    public RestApiRequest<WithdrawalFee> getWithdrawalFee(String collateralToken,BigDecimal amount, long chainId) {
         RestApiRequest<WithdrawalFee> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("amount", amount.toPlainString())
-                .putToUrl("chainId", String.valueOf(chainId));
-        request.request = createRequest(serverUrl, "/v1/uncommon-withdraw-fee", builder);
+                .putToUrl("chainId", String.valueOf(chainId))
+                .putToUrl("token",collateralToken)
+                ;
+        request.request = createRequest(serverUrl, "/v2/uncommon-withdraw-fee", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             WithdrawalFee result = new WithdrawalFee();
@@ -1039,7 +1102,7 @@ class RestApiRequestImpl {
                 .putToUrl("symbol", symbol)
                 .putToUrl("side", side.name())
                 .putToUrl("size", size.toPlainString());
-        request.request = createRequest(serverUrl, "/v1/get-worst-price", builder);
+        request.request = createRequest(serverUrl, "/v2/get-worst-price", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
 
@@ -1055,15 +1118,17 @@ class RestApiRequestImpl {
 
     public RestApiRequest<FundingRates> getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
         RestApiRequest<FundingRates> request = new RestApiRequest<>();
+        String contractArea = ExchangeInfo.getContractAreaBySymbol(symbol);
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
                 .putToUrl("limit", limit != null? String.valueOf(limit) : "")
                 .putToUrl("page", page != null ? String.valueOf(page) : "")
+                .putToUrl("token",contractArea)
                 .putToUrl("beginTimeInclusive",beginTimeInclusive !=null ? String.valueOf(beginTimeInclusive) : "")
                 .putToUrl("endTimeExclusive",endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
                 .putToUrl("positionSide",positionSide != null ? positionSide.name() : "");
 
-        request.request = createRequest(serverUrl, "/v1/funding", builder);
+        request.request = createRequest(serverUrl, "/v2/funding", builder);
         request.jsonParser = (jsonWrapper -> {
             FundingRates fundingRates = new FundingRates();
 

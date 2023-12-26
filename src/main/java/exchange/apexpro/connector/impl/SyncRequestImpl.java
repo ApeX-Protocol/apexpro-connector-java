@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import static exchange.apexpro.connector.constant.ApiConstants.CONTRACT_AREA_USDC;
+import static exchange.apexpro.connector.constant.ApiConstants.CONTRACT_AREA_USDT;
+
 public class SyncRequestImpl implements SyncRequestClient {
 
     private final RestApiRequestImpl requestImpl;
@@ -34,7 +37,9 @@ public class SyncRequestImpl implements SyncRequestClient {
 
     @Override
     public ApiCredential onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
-        return RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate));
+        //by default, will register for both contract areas USDC &USDT
+        RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate,CONTRACT_AREA_USDC));
+        return RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate,CONTRACT_AREA_USDT));
     }
 
 
@@ -44,7 +49,7 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Balance getBalance() {
+    public List<Balance> getBalance() {
         return RestApiInvoker.callSync(requestImpl.getBalance());
     }
 
@@ -54,8 +59,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public YesterdayPnl getYesterdayPnl() {
-        return RestApiInvoker.callSync(requestImpl.getYesterdayPnl());
+    public YesterdayPnl getYesterdayPnl(String contractArea) {
+        return RestApiInvoker.callSync(requestImpl.getYesterdayPnl(contractArea));
     }
 
     @Override
@@ -95,13 +100,13 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public OpenOrders getOpenOrders() {
-        return RestApiInvoker.callSync(requestImpl.getOpenOrders());
+    public OpenOrders getOpenOrders(String contractArea) {
+        return RestApiInvoker.callSync(requestImpl.getOpenOrders(contractArea));
     }
 
     @Override
-    public Map<String, String> cancelAllOpenOrders(String symbol) {
-        return RestApiInvoker.callSync(requestImpl.cancelAllOpenOrders(symbol));
+    public Map<String, String> cancelAllOpenOrders(String symbol,String contractArea) {
+        return RestApiInvoker.callSync(requestImpl.cancelAllOpenOrders(symbol,contractArea));
     }
 
     @Override
@@ -125,8 +130,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public WithdrawalList getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
-        return RestApiInvoker.callSync(requestImpl.getWithdrawList(limit, page, beginTimeInclusive, endTimeExclusive));
+    public WithdrawalList getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
+        return RestApiInvoker.callSync(requestImpl.getWithdrawList(currencyId,limit, page, beginTimeInclusive, endTimeExclusive));
     }
 
     @Override
@@ -136,17 +141,18 @@ public class SyncRequestImpl implements SyncRequestClient {
 
     @Override
     public WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId, String.valueOf(ExchangeInfo.global().getFastWithdrawAccountId())));
+
+        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId, String.valueOf(ExchangeInfo.global(ExchangeInfo.getContractArea(currencyId)).getFastWithdrawAccountId())));
     }
 
     @Override
     public WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId,String.valueOf(ExchangeInfo.global().getCrossChainAccountId())));
+        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId,String.valueOf(ExchangeInfo.global(ExchangeInfo.getContractArea(currencyId)).getCrossChainAccountId())));
     }
 
     @Override
-    public WithdrawalFee getWithdrawalFee(BigDecimal amount, long chainId) {
-        return RestApiInvoker.callSync(requestImpl.getWithdrawalFee(amount, chainId));
+    public WithdrawalFee getWithdrawalFee(String collateralToken,BigDecimal amount, long chainId) {
+        return RestApiInvoker.callSync(requestImpl.getWithdrawalFee(collateralToken,amount, chainId));
     }
 
     public OrderBookPrice getWorstPrice(String symbol, BigDecimal size, OrderSide side) {

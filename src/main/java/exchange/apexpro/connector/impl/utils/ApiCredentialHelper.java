@@ -19,6 +19,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+
+
+/**
+ * The ApiCredentialHelper class provides functionality to handle operations related to API credentials in a concurrent environment.
+ * It provides methods for encrypting and decrypting private keys, as well as for generating HMACs using a shared secret key.
+ *
+ * Public static methods:
+ *
+ * 1. encryptSecret(String secret, String passphrase): Encrypts the user's private key. It performs encryption operation asynchronously
+ *    using a thread pool executor. The encrypted key is Base64 encoded and returned as a String.
+ *
+ * 2. decryptSecret(String encrypted_secret, String passphrase) Decrypts the user's private key. This operation is performed asynchronously.
+ *    The method expects a Base64 encoded encrypted secret and returns the decrypted secret as a String.
+ *
+ * 3. createHmac(String secretKey, String data): Generates HMAC (Hash-based Message Authentication Code) using the provided secretKey and data.
+ *    This operation is synchronous and the HMAC is returned as a Base64 encoded String.
+ *
+ * In addition to the public static methods, the class also utilizes a private method, urlBase64Encode(byte[] data), for Base64 encoding operations.
+ */
+
+
 public class ApiCredentialHelper {
 
     private static ExecutorService fixedThreadPoolExecutor = Executors.newFixedThreadPool(10);

@@ -10,7 +10,7 @@ public class CancelOrder {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        Map<String, String> result = syncRequestClient.cancelOrder("431810596082548753");
+        Map<String, String> result = syncRequestClient.cancelOrder("527407652047684155");
         System.out.println("Delete order result: "+result);
     }
 }

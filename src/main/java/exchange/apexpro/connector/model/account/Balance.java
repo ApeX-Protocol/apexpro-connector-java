@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Data
 public class Balance {
 
+    private String token;
     private BigDecimal totalEquity;
     private BigDecimal available; //Available to withdraw or as margin to open new position.
     private BigDecimal totalInitialMargin;

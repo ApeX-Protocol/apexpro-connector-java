@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class Wallet {
 
-    private String asset;
+    private String token;
 
     private String balance;
 

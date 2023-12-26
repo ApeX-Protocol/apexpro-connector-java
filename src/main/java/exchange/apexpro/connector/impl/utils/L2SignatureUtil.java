@@ -243,7 +243,7 @@ public class L2SignatureUtil {
     }
 
     public static byte[] calcFastWithdrawFact(String currencyId,String ethAddress, String erc20Address, BigDecimal amount, String salt){
-        Currency currency = ExchangeInfo.currency(currencyId);
+        Currency currency = ExchangeInfo.currency(currencyId,ExchangeInfo.getContractArea(currencyId));
         BigInteger saltBigInteger=new BigInteger(salt);
         Keccak256 keccak256=new Keccak256();
         keccak256.update(hexStringToBytes(ethAddress));

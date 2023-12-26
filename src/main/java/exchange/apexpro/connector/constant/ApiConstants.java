@@ -27,7 +27,13 @@ public class ApiConstants {
 
     // ------------ Assets ------------
     public static final String ASSET_USDC = "USDC";
-    public static final String COLLATERAL_ASSET = ASSET_USDC;
+    public static final String ASSET_USDT = "USDT";
+    public static final String COLLATERAL_ASSET_USDC = ASSET_USDC;
+    public static final String COLLATERAL_ASSET_USDT = ASSET_USDT;
+
+    // ------------ Contract Area ------------
+    public static String CONTRACT_AREA_USDC = COLLATERAL_ASSET_USDC;
+    public static String CONTRACT_AREA_USDT = COLLATERAL_ASSET_USDT;
 
 
     // ------------ Ethereum Transactions ------------

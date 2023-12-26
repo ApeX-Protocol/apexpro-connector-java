@@ -24,7 +24,7 @@ public class CreateOrderWithTPSL {
 
 
         //Prepare an order;
-        String symbol = "BTC-USDC";
+        String symbol = "BTC-USDT";
         String clientId = UUID.randomUUID().toString();
         BigDecimal size = new BigDecimal("0.002");
         BigDecimal price = new BigDecimal("23300");

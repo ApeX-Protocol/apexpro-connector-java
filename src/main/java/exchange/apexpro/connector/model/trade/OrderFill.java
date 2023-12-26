@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 public class OrderFill {
 
     private String id;
-    private String accountId;
     private String orderId;
     private String clientOrderId;
 
