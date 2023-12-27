@@ -28,7 +28,7 @@ public class CreateOrder {
         String symbol = "BTC-USDT";
         String clientId = UUID.randomUUID().toString();
         BigDecimal size = new BigDecimal("0.002");
-        BigDecimal price = new BigDecimal("42300");
+        BigDecimal price = new BigDecimal("42100");
 
         //Calculate limit fee
         BigDecimal maxFeeRate = new BigDecimal("0.0005"); //you can get this value through max(Account.takerFeeRate,Account.makerFeeRate)

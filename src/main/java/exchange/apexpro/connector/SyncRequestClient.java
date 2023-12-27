@@ -261,12 +261,14 @@ public interface SyncRequestClient {
 
     /**
      * GET Order by clientOrderId
-     * GET /v2/order-by-client-id
+     * GET /v2/order-by-client-order-id
      *
      * @param id connector order id
+     * @param contractArea valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
+
      * @return order
      */
-    Order getOrderByClientOrderId(String id);
+    Order getOrderByClientOrderId(String id,String contractArea);
 
     /**
      * GET Retrieve User Deposit Data

@@ -120,8 +120,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Order getOrderByClientOrderId(String id) {
-        return RestApiInvoker.callSync(requestImpl.getOrderByClientOrderId(id));
+    public Order getOrderByClientOrderId(String id,String contractArea) {
+        return RestApiInvoker.callSync(requestImpl.getOrderByClientOrderId(id,contractArea));
     }
 
     @Override

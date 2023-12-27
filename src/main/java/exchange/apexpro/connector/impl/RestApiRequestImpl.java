@@ -873,11 +873,12 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Order> getOrderByClientOrderId(String id) {
+    public RestApiRequest<Order> getOrderByClientOrderId(String id,String contractArea) {
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("id", id);
-        request.request = createRequest(serverUrl, "/v2/order-by-client-id", builder);
+                .putToUrl("id", id)
+                .putToUrl("token",contractArea);
+        request.request = createRequest(serverUrl, "/v2/order-by-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
