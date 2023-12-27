@@ -28,9 +28,10 @@ The examples are located under src/test/java/examples. Before running the exampl
 //Load configration information from server side;
 
 ExchangeInfo.load();
-log.info("ExchangeInfo.global:{} ",ExchangeInfo.global(CONTRACT_AREA_USDC));
-log.info("ExchangeInfo.currencies: {}",ExchangeInfo.currencyMap(CONTRACT_AREA_USDC));
-log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMap(CONTRACT_AREA_USDC));
+
+log.info("ExchangeInfo.global:{} ",ExchangeInfo.global(CONTRACT_ZONE_USDC));
+log.info("ExchangeInfo.currencies: {}",ExchangeInfo.currencyMap(CONTRACT_ZONE_USDC));
+log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMap(CONTRACT_ZONE_USDC));
 
 ```
 
