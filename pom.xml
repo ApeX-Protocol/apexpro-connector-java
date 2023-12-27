@@ -4,7 +4,7 @@
 
     <groupId>io.github.apex-protocol</groupId>
     <artifactId>apexpro-connector-java</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
     <name>apexpro-connector-java</name>
     <description>A lightweight library to ApeX-Protocol</description>
     <url>https://github.com/ApeX-Protocol/apexpro-connector-java</url>
