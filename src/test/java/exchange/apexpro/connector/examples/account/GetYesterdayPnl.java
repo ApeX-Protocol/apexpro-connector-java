@@ -11,7 +11,7 @@ public class GetYesterdayPnl {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        YesterdayPnl historyValue = syncRequestClient.getYesterdayPnl(ApiConstants.CONTRACT_AREA_USDC);
+        YesterdayPnl historyValue = syncRequestClient.getYesterdayPnl(ApiConstants.CONTRACT_ZONE_USDC);
         System.out.println(historyValue);
     }
 }

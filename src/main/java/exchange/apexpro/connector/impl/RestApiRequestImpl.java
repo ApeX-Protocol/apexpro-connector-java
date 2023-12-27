@@ -115,7 +115,7 @@ class RestApiRequestImpl {
     }
 
 
-    RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate,String contractArea) {
+    RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate,String contractZone) {
         RestApiRequest<ApiCredential> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("ethereumAddress", ethAddress)
@@ -123,7 +123,7 @@ class RestApiRequestImpl {
                 .putToPost("starkKeyYCoordinate", l2KeyYCoordinate)
                 .putToPost("walletName", "java-sdk")
                 .putToPost("platform", "api")
-                .putToPost("token", contractArea)
+                .putToPost("token", contractZone)
                 .putToHeader("apex-ethereum-address", ethAddress)
                 .putToHeader("apex-signature", onboardingSignature);
 
@@ -214,17 +214,17 @@ class RestApiRequestImpl {
             account.setPositionId(jsonWrapper.getString("positionId"));
 
             JsonWrapperArray accountsArray = jsonWrapper.getJsonArray("accounts");
-            List<ContractAreaConfig> contractAreaConfigs = new LinkedList<>();
+            List<ContractZoneConfig> contractZoneConfigs = new LinkedList<>();
             accountsArray.forEach(item -> {
-                ContractAreaConfig contractAreaConfig = new ContractAreaConfig();
-                contractAreaConfig.setContractArea(item.getString("token").toUpperCase());
-                contractAreaConfig.setTakerFeeRate(new BigDecimal(item.getString("takerFeeRate")));
-                contractAreaConfig.setMakerFeeRate(new BigDecimal(item.getString("makerFeeRate")));
-                contractAreaConfig.setMinInitialMarginRate(new BigDecimal(item.getString("minInitialMarginRate")));
-                contractAreaConfig.setCreatedTime(item.getLong("createdAt"));
-                contractAreaConfigs.add(contractAreaConfig);
+                ContractZoneConfig contractZoneConfig = new ContractZoneConfig();
+                contractZoneConfig.setContractZone(item.getString("token").toUpperCase());
+                contractZoneConfig.setTakerFeeRate(new BigDecimal(item.getString("takerFeeRate")));
+                contractZoneConfig.setMakerFeeRate(new BigDecimal(item.getString("makerFeeRate")));
+                contractZoneConfig.setMinInitialMarginRate(new BigDecimal(item.getString("minInitialMarginRate")));
+                contractZoneConfig.setCreatedTime(item.getLong("createdAt"));
+                contractZoneConfigs.add(contractZoneConfig);
             });
-            account.setContractAreaConfigList(contractAreaConfigs);
+            account.setContractZoneConfigList(contractZoneConfigs);
 
 
             List<Wallet> walletList = new LinkedList<>();
@@ -301,7 +301,7 @@ class RestApiRequestImpl {
 
     public RestApiRequest<HistoryPnl> getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit) {
 
-        String contractArea = ExchangeInfo.getContractAreaBySymbol(symbol);
+        String contractZone = ExchangeInfo.getContractZoneBySymbol(symbol);
 
 
         RestApiRequest<HistoryPnl> request = new RestApiRequest<>();
@@ -310,7 +310,7 @@ class RestApiRequestImpl {
                 .putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive))
                 .putToUrl("type", "CLOSE_POSITION")
                 .putToUrl("symbol", symbol)
-                .putToUrl("token",contractArea)
+                .putToUrl("token",contractZone)
                 .putToUrl("page", String.valueOf(page))
                 .putToUrl("limit", String.valueOf(limit));
         request.request = createRequest(serverUrl, "/v2/historical-pnl", builder);
@@ -337,10 +337,10 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<YesterdayPnl> getYesterdayPnl(String contractArea) {
+    public RestApiRequest<YesterdayPnl> getYesterdayPnl(String contractZone) {
         RestApiRequest<YesterdayPnl> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("token",contractArea);
+                .putToUrl("token",contractZone);
 
         request.request = createRequest(serverUrl, "/v2/yesterday-pnl", builder);
         request.jsonParser = (jsonWrapper -> {
@@ -394,7 +394,7 @@ class RestApiRequestImpl {
         RestApiRequest<OrderFills> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
-                .putToUrl("token",ExchangeInfo.getContractAreaBySymbol(symbol))
+                .putToUrl("token",ExchangeInfo.getContractZoneBySymbol(symbol))
                 .putToUrl("page", String.valueOf(page))
                 .putToUrl("limit", String.valueOf(limit));
                 if (beginTimeInclusive > 0)
@@ -686,9 +686,9 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<OpenOrders> getOpenOrders(String contractArea) {
+    public RestApiRequest<OpenOrders> getOpenOrders(String contractZone) {
         RestApiRequest<OpenOrders> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("token",contractArea);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("token",contractZone);
         request.request = createRequest(serverUrl, "/v2/open-orders", builder);
         request.jsonParser = (jsonWrapper -> {
             OpenOrders result = new OpenOrders();
@@ -732,12 +732,12 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Map<String, String>> cancelAllOpenOrders(String symbol,String contractArea) {
+    public RestApiRequest<Map<String, String>> cancelAllOpenOrders(String symbol,String contractZone) {
 
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("symbol", symbol)
-                .putToPost("token",contractArea);
+                .putToPost("token",contractZone);
         request.request = createRequest(serverUrl, "/v2/delete-open-orders", builder);
         request.jsonParser = (jsonWrapper -> new HashMap<>());
         return request;
@@ -747,7 +747,7 @@ class RestApiRequestImpl {
         RestApiRequest<HistoryOrders> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
-                .putToUrl("token",ExchangeInfo.getContractAreaBySymbol(symbol))
+                .putToUrl("token",ExchangeInfo.getContractZoneBySymbol(symbol))
                 .putToUrl("status", status != null ? status.name() : "")
                 .putToUrl("side", side != null ? side.name() : "")
                 .putToUrl("type", orderType != null ? orderType.name() : "")
@@ -873,11 +873,11 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Order> getOrderByClientOrderId(String id,String contractArea) {
+    public RestApiRequest<Order> getOrderByClientOrderId(String id,String contractZone) {
         RestApiRequest<Order> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("id", id)
-                .putToUrl("token",contractArea);
+                .putToUrl("token",contractZone);
         request.request = createRequest(serverUrl, "/v2/order-by-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -1016,7 +1016,7 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalResult> fastWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractArea(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractZone(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
@@ -1048,7 +1048,7 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalResult> crossChainWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractArea(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
+        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain(ExchangeInfo.getContractZone(currencyId)).getChains().stream().filter(f->f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
@@ -1119,12 +1119,12 @@ class RestApiRequestImpl {
 
     public RestApiRequest<FundingRates> getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
         RestApiRequest<FundingRates> request = new RestApiRequest<>();
-        String contractArea = ExchangeInfo.getContractAreaBySymbol(symbol);
+        String contractZone = ExchangeInfo.getContractZoneBySymbol(symbol);
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
                 .putToUrl("limit", limit != null? String.valueOf(limit) : "")
                 .putToUrl("page", page != null ? String.valueOf(page) : "")
-                .putToUrl("token",contractArea)
+                .putToUrl("token",contractZone)
                 .putToUrl("beginTimeInclusive",beginTimeInclusive !=null ? String.valueOf(beginTimeInclusive) : "")
                 .putToUrl("endTimeExclusive",endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
                 .putToUrl("positionSide",positionSide != null ? positionSide.name() : "");

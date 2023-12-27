@@ -14,7 +14,7 @@ public class Account {
     private String id;
     private String starkKey; // This is an alias of L2Key.
     private String positionId;
-    private List<ContractAreaConfig> contractAreaConfigList;
+    private List<ContractZoneConfig> contractZoneConfigList;
     private Long createdTime;
     private List<Wallet> wallets;
     private List<Position> openPositions;

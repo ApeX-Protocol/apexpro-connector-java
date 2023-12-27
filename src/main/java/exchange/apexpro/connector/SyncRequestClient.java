@@ -106,11 +106,11 @@ public interface SyncRequestClient {
     /**
      * GET Yesterday's Profit & Loss
      * GET /v2/yesterday-pnl
-     * @param contractArea ApiConstants.CONTRACT_AREA_USDC | ApiConstants.CONTRACT_AREA_USDT
+     * @param contractZone ApiConstants.CONTRACT_ZONE_USDC | ApiConstants.CONTRACT_ZONE_USDT
      *
      * @return yesterdayPnl
      */
-    YesterdayPnl getYesterdayPnl(String contractArea);
+    YesterdayPnl getYesterdayPnl(String contractZone);
 
     /**
      * GET Historical Asset Value
@@ -219,9 +219,9 @@ public interface SyncRequestClient {
     /**
      * GET Open Orders
      * GET /v2/open-orders
-     * @param contractArea valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
+     * @param contractZone valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
      */
-    OpenOrders getOpenOrders(String contractArea);
+    OpenOrders getOpenOrders(String contractZone);
 
 
     /**
@@ -229,10 +229,10 @@ public interface SyncRequestClient {
      * POST /v2/delete-open-orders
      *
      * @param symbol "BTC-USDC,ETH-USDC", Cancel all orders if none
-     * @param contractArea only orders in this contract area will be canceled. valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
+     * @param contractZone only orders in this contract area will be canceled. valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
      * @return empty
      */
-    Map<String, String> cancelAllOpenOrders(String symbol,String contractArea);
+    Map<String, String> cancelAllOpenOrders(String symbol,String contractZone);
 
     /**
      * GET All Order History
@@ -264,11 +264,11 @@ public interface SyncRequestClient {
      * GET /v2/order-by-client-order-id
      *
      * @param id connector order id
-     * @param contractArea valid param is the one of [ApiConstants.CONTRACT_AREA_USDC,ApiConstants/CONTRACT_AREA_USDT]
+     * @param contractZone valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
 
      * @return order
      */
-    Order getOrderByClientOrderId(String id,String contractArea);
+    Order getOrderByClientOrderId(String id,String contractZone);
 
     /**
      * GET Retrieve User Deposit Data

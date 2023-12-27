@@ -11,9 +11,9 @@ public class CancelAllOpenOrders {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        Map<String, String> result = syncRequestClient.cancelAllOpenOrders("BTC-USDC", ApiConstants.CONTRACT_AREA_USDC);
+        Map<String, String> result = syncRequestClient.cancelAllOpenOrders("BTC-USDC", ApiConstants.CONTRACT_ZONE_USDC);
         System.out.println(result);
-        result = syncRequestClient.cancelAllOpenOrders("BTC-USDT,ETH-USDT", ApiConstants.CONTRACT_AREA_USDT);
+        result = syncRequestClient.cancelAllOpenOrders("BTC-USDT,ETH-USDT", ApiConstants.CONTRACT_ZONE_USDT);
         System.out.println(result);
 
     }

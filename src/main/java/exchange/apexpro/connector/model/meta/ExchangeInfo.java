@@ -172,36 +172,36 @@ public class ExchangeInfo {
                         Function.identity()));
     }
 
-    public static Global global(String contractArea) {
+    public static Global global(String contractZone) {
         if (!isLoaded)
             load();
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             return HOLDER_REF_USDT.get().global;
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             return HOLDER_REF_USDC.get().global;
         return null;
     }
 
-    public static MultiChain multiChain(String contractArea) {
+    public static MultiChain multiChain(String contractZone) {
         if (!isLoaded)
             load();
 
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             return HOLDER_REF_USDT.get().multiChain;
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             return HOLDER_REF_USDC.get().multiChain;
 
         return null;
     }
 
-    public static Currency currency(String currencyId,String contractArea) {
+    public static Currency currency(String currencyId,String contractZone) {
         if (!isLoaded)
             load();
 
         Currency currency = null;
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             currency = HOLDER_REF_USDT.get().currencyMap.get(currencyId);
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             currency = HOLDER_REF_USDC.get().currencyMap.get(currencyId);
 
         if (currency == null) {
@@ -210,13 +210,13 @@ public class ExchangeInfo {
         return currency;
     }
 
-    public static ImmutableMap<String, Currency> currencyMap(String contractArea) {
+    public static ImmutableMap<String, Currency> currencyMap(String contractZone) {
         if (!isLoaded)
             load();
 
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             return HOLDER_REF_USDT.get().currencyMap;
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             return HOLDER_REF_USDC.get().currencyMap;
 
         return null;
@@ -234,25 +234,25 @@ public class ExchangeInfo {
             throw new ApexProApiException(RUNTIME_ERROR,"invalid symbol: " + symbol);
     }
 
-    public static ImmutableMap<String, PerpetualContract> perpetualContractMap(String contractArea) {
+    public static ImmutableMap<String, PerpetualContract> perpetualContractMap(String contractZone) {
         if (!isLoaded)
             load();
 
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             return HOLDER_REF_USDT.get().perpetualContractMap;
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             return HOLDER_REF_USDC.get().perpetualContractMap;
 
 
         return null;
     }
 
-    public static ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap(String contractArea) {
+    public static ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap(String contractZone) {
         if (!isLoaded)
             load();
-        if (contractArea.equals(CONTRACT_AREA_USDT))
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
             return HOLDER_REF_USDT.get().crossSymbolIdToPerpetualContractMap;
-        if (contractArea.equals(CONTRACT_AREA_USDC))
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
             return HOLDER_REF_USDC.get().crossSymbolIdToPerpetualContractMap;
 
         return null;
@@ -282,15 +282,15 @@ public class ExchangeInfo {
         return (str == null || str.equals("")) ? defaultValue : new BigDecimal(str);
     }
 
-    public static String getContractArea(String collateralToken) {
+    public static String getContractZone(String collateralToken) {
         if (collateralToken.toUpperCase().equals(COLLATERAL_ASSET_USDC))
-            return CONTRACT_AREA_USDC;
+            return CONTRACT_ZONE_USDC;
         if (collateralToken.toUpperCase().equals(COLLATERAL_ASSET_USDT))
-            return CONTRACT_AREA_USDT;
+            return CONTRACT_ZONE_USDT;
         return null;
     }
 
-    public static String getContractAreaBySymbol(String symbol) {
+    public static String getContractZoneBySymbol(String symbol) {
         ImmutableMap<String, PerpetualContract> perpetualContractImmutableMap = perpetualContractMap(COLLATERAL_ASSET_USDC);
         if (perpetualContractImmutableMap != null && perpetualContractImmutableMap.containsKey(symbol))
             return COLLATERAL_ASSET_USDC;

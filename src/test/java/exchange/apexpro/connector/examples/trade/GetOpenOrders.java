@@ -10,7 +10,7 @@ public class GetOpenOrders {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        OpenOrders result = syncRequestClient.getOpenOrders(ApiConstants.CONTRACT_AREA_USDT);
+        OpenOrders result = syncRequestClient.getOpenOrders(ApiConstants.CONTRACT_ZONE_USDT);
         System.out.println("Open Orders: "+result);
     }
 }

@@ -17,14 +17,14 @@ public class GetWithdrawFee {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        ExchangeInfo.multiChain(CONTRACT_AREA_USDC).getChains().forEach(chain -> {
+        ExchangeInfo.multiChain(CONTRACT_ZONE_USDC).getChains().forEach(chain -> {
             WithdrawalFee result = syncRequestClient.getWithdrawalFee(COLLATERAL_ASSET_USDC,new BigDecimal("1000"), chain.getChainId());
-            System.out.println("CONTRACT_AREA_USDC: WithdrawalFee[chainId:"+chain.getChain()+"]:"+result);
+            System.out.println("CONTRACT_ZONE_USDC: WithdrawalFee[chainId:"+chain.getChain()+"]:"+result);
         });
 
-        ExchangeInfo.multiChain(CONTRACT_AREA_USDT).getChains().forEach(chain -> {
+        ExchangeInfo.multiChain(CONTRACT_ZONE_USDT).getChains().forEach(chain -> {
             WithdrawalFee result = syncRequestClient.getWithdrawalFee(COLLATERAL_ASSET_USDT,new BigDecimal("1000"), chain.getChainId());
-            System.out.println("CONTRACT_AREA_USDT: WithdrawalFee[chainId:"+chain.getChain()+"]:"+result);
+            System.out.println("CONTRACT_ZONE_USDT: WithdrawalFee[chainId:"+chain.getChain()+"]:"+result);
         });
 
 
