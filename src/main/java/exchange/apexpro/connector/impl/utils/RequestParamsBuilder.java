@@ -141,10 +141,10 @@ public class RequestParamsBuilder {
     }
 
     /**
-     * 使用标准URL Encode编码。注意和JDK默认的不同，空格被编码为%20而不是+。
+     * Encode using standard URL Encode. Note that unlike the JDK default, whitespace is encoded as %20 instead of +.
      *
-     * @param s String字符串
-     * @return URL编码后的字符串
+     * @param s String as input
+     * @return URL encoded string
      */
     private static String urlEncode(String s) {
         try {

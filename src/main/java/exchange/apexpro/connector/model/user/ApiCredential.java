@@ -14,6 +14,6 @@ public class ApiCredential {
     //ID
     private Long userId;
     private Long accountId;
-
+    private String address;
     private int networkId;
 }

@@ -74,7 +74,7 @@ public class OnboardingHashHelper {
 
 
     /**
-     * 验证一个EIP721签名是否有效
+     * Verify that an EIP721 signature is valid
      */
     public static boolean verifySignature(String ethSignature,String originalMessageHash,String ethAddress){
 

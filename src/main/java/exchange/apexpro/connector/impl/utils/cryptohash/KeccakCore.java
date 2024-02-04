@@ -120,13 +120,13 @@ abstract class KeccakCore extends DigestEngine{
 			| ((buf[off + 7] & 0xFFL) << 56);
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
+//	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
 	protected void engineReset()
 	{
 		doReset();
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
+//	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
 	protected void processBlock(byte[] data)
 	{
 		/* Input block */
@@ -536,7 +536,7 @@ abstract class KeccakCore extends DigestEngine{
 		}
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
+//	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
 	protected void doPadding(byte[] out, int off)
 	{
 		int ptr = flush();
@@ -562,7 +562,7 @@ abstract class KeccakCore extends DigestEngine{
 		System.arraycopy(tmpOut, 0, out, off, dlen);
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
+//	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
 	protected void doInit()
 	{
 		A = new long[25];
@@ -570,7 +570,7 @@ abstract class KeccakCore extends DigestEngine{
 		doReset();
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+//	/** @see org.ethereum.crypto.cryptohash.Digest */
 	public int getBlockLength()
 	{
 		return 200 - 2 * engineGetDigestLength();
@@ -588,14 +588,14 @@ abstract class KeccakCore extends DigestEngine{
 		A[20] = 0xFFFFFFFFFFFFFFFFL;
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
+//	/** @see org.ethereum.crypto.cryptohash.DigestEngine */
 	protected Digest copyState(KeccakCore dst)
 	{
 		System.arraycopy(A, 0, dst.A, 0, 25);
 		return super.copyState(dst);
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+//	/** @see org.ethereum.crypto.cryptohash.Digest */
 	public String toString()
 	{
 		return "Keccak-" + (engineGetDigestLength() << 3);

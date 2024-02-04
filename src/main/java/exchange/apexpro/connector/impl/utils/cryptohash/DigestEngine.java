@@ -127,7 +127,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
 		}
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public byte[] digest()
 	{
 		adjustDigestLen();
@@ -136,14 +136,14 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
 		return result;
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public byte[] digest(byte[] input)
 	{
 		update(input, 0, input.length);
 		return digest();
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public int digest(byte[] buf, int offset, int len)
 	{
 		adjustDigestLen();
@@ -159,7 +159,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
 		}
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public void reset()
 	{
 		engineReset();
@@ -167,7 +167,7 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
 		blockCount = 0;
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public void update(byte input)
 	{
 		inputBuf[inputLen ++] = (byte)input;
@@ -178,13 +178,13 @@ public abstract class DigestEngine extends MessageDigest implements Digest {
 		}
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public void update(byte[] input)
 	{
 		update(input, 0, input.length);
 	}
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
+	
 	public void update(byte[] input, int offset, int len)
 	{
 		while (len > 0) {

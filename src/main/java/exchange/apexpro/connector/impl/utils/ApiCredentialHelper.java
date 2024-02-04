@@ -53,7 +53,7 @@ public class ApiCredentialHelper {
     }
 
     /**
-     * 加密用户私钥
+     * Encrypts the user private key
      * @param secret
      * @param passphrase
      * @return
@@ -104,7 +104,7 @@ public class ApiCredentialHelper {
     }
 
     /**
-     * 解密用户私钥
+     * Decrypt the user's private key
      * @param encrypted_secret
      * @param passphrase
      * @return
@@ -151,7 +151,7 @@ public class ApiCredentialHelper {
     }
 
     /**
-     * 生成HMAC
+     * generate HMAC
      * @param
      * @param data
      * @return

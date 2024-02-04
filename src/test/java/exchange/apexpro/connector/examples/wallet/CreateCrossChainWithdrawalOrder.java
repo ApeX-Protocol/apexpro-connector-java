@@ -30,7 +30,7 @@ public class CreateCrossChainWithdrawalOrder {
         long expireTime = expireTimeInHour * 3600L * 1000L;
 
         String currency = COLLATERAL_ASSET_USDC;
-        String address = apexProCredentials.web3Credentials.getAddress();
+        String address = apexProCredentials.getAddress();
         Long chainId = 97l;
         WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(currency,amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();

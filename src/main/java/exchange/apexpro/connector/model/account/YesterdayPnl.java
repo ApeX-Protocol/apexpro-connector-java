@@ -5,7 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * Yesterday's Profit & Loss
+ * Yesterday's Profit and Loss
  */
 @Data
 public class YesterdayPnl {

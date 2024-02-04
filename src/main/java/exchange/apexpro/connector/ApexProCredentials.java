@@ -10,9 +10,19 @@ public class ApexProCredentials {
     public Credentials web3Credentials;
     public ApiCredential apiCredential;
     public L2KeyPair l2KeyPair;
+
+    private ApexProCredentials() {
+    }
     private ApexProCredentials(String privateEthereumKey) {
         Credentials web3Credentials = Credentials.create(privateEthereumKey);
         this.web3Credentials = web3Credentials;
+    }
+
+    public static ApexProCredentials create(ApiCredential apiCredential,L2KeyPair l2KeyPair) {
+        ApexProCredentials apexProCredentials = new ApexProCredentials();
+        apexProCredentials.apiCredential = apiCredential;
+        apexProCredentials.l2KeyPair = l2KeyPair;
+        return apexProCredentials;
     }
 
     public static ApexProCredentials create(String privateEthereumKey,int networkId) throws ApexProApiException {
@@ -27,7 +37,9 @@ public class ApexProCredentials {
     }
 
     public String getAddress() {
-        return this.web3Credentials.getAddress();
+        if (this.web3Credentials != null)
+            return this.web3Credentials.getAddress();
+        return this.apiCredential.getAddress();
     }
 
 }

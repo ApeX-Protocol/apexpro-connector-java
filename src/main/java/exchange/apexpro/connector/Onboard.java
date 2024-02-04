@@ -69,6 +69,7 @@ public class Onboard {
         String signature = Numeric.toHexString(signatureValue);
         ApiCredential apiCredential = syncRequestClient.onboard(ethAddress,signature,l2Key,l2KeyYCoordinate);
         apiCredential.setNetworkId(networkId);
+        apiCredential.setAddress(ethAddress);
         return apiCredential;
     }
 

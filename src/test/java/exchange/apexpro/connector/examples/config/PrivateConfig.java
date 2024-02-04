@@ -27,5 +27,10 @@ public class PrivateConfig {
         return privateConfig;
     }
 
-
+    public static PrivateConfig createApexProCredentials(L2KeyPair l2KeyPair,ApiCredential apiCredential) {
+        PrivateConfig privateConfig = new PrivateConfig();
+        ApexProCredentials apexProCredentials = ApexProCredentials.create(apiCredential,l2KeyPair);
+        privateConfig.apexProCredentials = apexProCredentials;
+        return privateConfig;
+    }
 }

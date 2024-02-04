@@ -84,7 +84,7 @@ public interface SyncRequestClient {
 
 
     /**
-     * GET Account's total equity & available balance
+     * GET Account's total equity and available balance
      * GET /v2/account
      *
      * @return list of collateral assets
@@ -104,7 +104,7 @@ public interface SyncRequestClient {
     HistoryPnl getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit);
 
     /**
-     * GET Yesterday's Profit & Loss
+     * GET Yesterday's Profit and Loss
      * GET /v2/yesterday-pnl
      * @param contractZone ApiConstants.CONTRACT_ZONE_USDC | ApiConstants.CONTRACT_ZONE_USDT
      *
@@ -184,7 +184,7 @@ public interface SyncRequestClient {
      * @param type            "LIMIT", "MARKET"
      * @param size            Size
      * @param triggerPrice    Trigger price
-     * @param triggerPriceType ORACLE、INDEX、MARKET
+     * @param triggerPriceType ORACLE, INDEX, MARKET
      * @param orderPrice      Order price, only valid on LIMIT order
      * @param maxFeeRate      Maximum trading fee rate, you can get it by max(taker_fee,maker_fee), taker_fee/maker_fee can be fetched from GET /v1/account
      * @param timeInForce     "GOOD_TIL_CANCEL", "FILL_OR_KILL", "IMMEDIATE_OR_CANCEL", "POST_ONLY"
@@ -345,7 +345,7 @@ public interface SyncRequestClient {
     WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
 
     /**
-     * Returns calculated withdrawal fee for Fast & Cross-Chain withdrawal & total available fund pool amount to withdraw;
+     * Returns calculated withdrawal fee for Fast and Cross-Chain withdrawal and total available fund pool amount to withdraw;
      * GET /v2/uncommon-withdraw-fee
      *
      * @param collateralToken  valid params in [ApiConstants.COLLATERAL_ASSET_USDC,ApiConstants.COLLATERAL_ASSET_USDT]
@@ -356,7 +356,7 @@ public interface SyncRequestClient {
 
 
     /**
-     * Get Worst price & bidOne price & askOne price from orderbook;
+     * Get Worst price and bidOne price and askOne price from orderbook;
      * GET /v2/get-worst-price
      * @param side BUY or SELL order
      * @param size the size of Order placing you want
