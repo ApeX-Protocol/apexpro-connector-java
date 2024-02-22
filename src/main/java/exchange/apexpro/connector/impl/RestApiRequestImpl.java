@@ -38,6 +38,8 @@ class RestApiRequestImpl {
     private L2KeyPair l2KeyPair;
     private String serverUrl;
 
+    private int brokerId;
+
     RestApiRequestImpl(ApexProCredentials apexProCredentials, RequestOptions options) {
         if (apexProCredentials != null) {
             this.apiCredential = apexProCredentials.apiCredential;
@@ -45,6 +47,10 @@ class RestApiRequestImpl {
         }
         if (options.getUrl() != null && !options.getUrl().equals(""))
             this.serverUrl = options.getUrl();
+
+        if (options.getBrokerId() > 0)
+            this.brokerId = options.getBrokerId();
+
     }
 
 
@@ -453,6 +459,7 @@ class RestApiRequestImpl {
         }
 
         RestApiRequest<Order> request = new RestApiRequest<>();
+
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToPost("symbol", symbol)
                 .putToPost("side", side.name())
@@ -466,6 +473,9 @@ class RestApiRequestImpl {
                 .putToPost("signature", signature)
                 .putToPost("reduceOnly", String.valueOf(reduceOnly))
                 ;
+        if (this.brokerId > 0)
+            builder.putToPost("brokerId",this.brokerId);
+
 
         // with taker profit
         if (takeProfitOrder != null) {
@@ -619,6 +629,9 @@ class RestApiRequestImpl {
                 .putToPost("clientId", clientOrderId)
                 .putToPost("signature", signature)
                 .putToPost("reduceOnly", String.valueOf(reduceOnly));
+
+        if (this.brokerId > 0)
+            builder.putToPost("brokerId",this.brokerId);
 
         request.request = createRequest(serverUrl, "/v2/create-order", builder);
         request.jsonParser = (jsonWrapper -> {

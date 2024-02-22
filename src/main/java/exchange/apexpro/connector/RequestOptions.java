@@ -13,13 +13,15 @@ import static exchange.apexpro.connector.constant.ApiConstants.NETWORKID_MAIN;
 public class RequestOptions {
 
     private String url = ApiConstants.APEX_HTTP_TEST + "/api";
-
+    private int brokerId;
     private int networkId = ApiConstants.NETWORKID_TEST;
     public RequestOptions() {
     }
 
     public RequestOptions(RequestOptions option) {
         this.url = option.url;
+        this.networkId = option.networkId;
+        this.brokerId = option.brokerId;
     }
 
 
@@ -47,6 +49,13 @@ public class RequestOptions {
         } else {
             this.url = ApiConstants.APEX_HTTP_TEST + "/api";
         }
+    }
+
+    public void setBrokerId(int brokerId) {
+        this.brokerId = brokerId;
+    }
+    public int getBrokerId() {
+        return this.brokerId;
     }
 
 }

@@ -27,7 +27,7 @@ public class CreateOrderWithTPSL {
         String symbol = "BTC-USDT";
         String clientId = UUID.randomUUID().toString();
         BigDecimal size = new BigDecimal("0.002");
-        BigDecimal price = new BigDecimal("23300");
+        BigDecimal price = new BigDecimal("43300");
         BigDecimal maxFeeRate = new BigDecimal("0.0005"); //you can get this value through max(Account.takerFeeRate,Account.makerFeeRate)
         OrderSide side = OrderSide.BUY;
         OrderType orderType = OrderType.LIMIT;

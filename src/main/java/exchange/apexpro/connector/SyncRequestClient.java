@@ -68,6 +68,21 @@ public interface SyncRequestClient {
     }
 
 
+    /**
+     * Create the synchronous connector. All interfaces defined in synchronous connector
+     * are implemented by synchronous mode.
+     * @param  apexProCredentials
+     * @param  brokerId If you are a broker of Apex, please pass the broker id here
+     * @return The instance of synchronous connector.
+     */
+    static SyncRequestClient create(ApexProCredentials apexProCredentials,int brokerId) {
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.setNetworkId(apexProCredentials.apiCredential.getNetworkId());
+        requestOptions.setBrokerId(brokerId);
+        return ApiInternalFactory.getInstance().createSyncRequestClient(apexProCredentials, requestOptions);
+    }
+
+
     Long generateNonce(String ethAddress, int chainId, String l2PublicKey);
 
     String getExchangeInfo();
